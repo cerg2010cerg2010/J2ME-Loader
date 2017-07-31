@@ -20,6 +20,7 @@ import android.content.Context;
 import android.os.Environment;
 import android.view.Display;
 import android.view.WindowManager;
+import android.content.Intent;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -45,6 +46,7 @@ public class ContextHolder {
 	private static MicroActivity currentActivity;
 	private static ArrayList<WeakReference<MicroActivity>> activityPool = new ArrayList();
 	private static AndroidRecordStoreManager recordStoreManager = new AndroidRecordStoreManager();
+	private static ArrayList<ActivityResultListener> resultListeners = new ArrayList<ActivityResultListener>();
 
 	public static void setContext(Context cx) {
 		context = cx;

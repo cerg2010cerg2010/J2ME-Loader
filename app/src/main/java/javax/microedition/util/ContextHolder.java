@@ -123,6 +123,17 @@ public class ContextHolder {
 		return currentActivity;
 	}
 
+	public static void addActivityResultListener(ActivityResultListener listener) {
+		if (!resultListeners.contains(listener)) {
+			resultListeners.add(listener);
+		}
+	}
+
+	public static void removeActivityResultListener(ActivityResultListener listener) {
+		resultListeners.remove(listener);
+	}
+
+
 	public static void notifyOnActivityResult(int requestCode, int resultCode, Intent data) {
 		for (ActivityResultListener listener : resultListeners) {
 			listener.onActivityResult(requestCode, resultCode, data);

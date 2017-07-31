@@ -124,7 +124,7 @@ public abstract class Canvas extends Displayable {
 		keyCodeToKeyName.put(keyCode, keyName);
 	}
 
-	public static int convertAndroidKeyCode(int keyCode) {
+	private static int convertAndroidKeyCode(int keyCode) {
 		Integer res = androidToMIDP.get(keyCode);
 		if (res != null) {
 			return res;
@@ -165,11 +165,11 @@ public abstract class Canvas extends Displayable {
 		public boolean onKeyDown(int keyCode, KeyEvent event) {
 			keyCode = convertAndroidKeyCode(keyCode);
 			if (event.getRepeatCount() == 0) {
-				if (overlay == null || !overlay.keyPressed(keyCode)) {
+				if (overlay == null) {
 					postEvent(CanvasEvent.getInstance(Canvas.this, CanvasEvent.KEY_PRESSED, keyCode));
 				}
 			} else {
-				if (overlay == null || !overlay.keyRepeated(keyCode)) {
+				if (overlay == null) {
 					postEvent(CanvasEvent.getInstance(Canvas.this, CanvasEvent.KEY_REPEATED, keyCode));
 				}
 			}
@@ -178,7 +178,7 @@ public abstract class Canvas extends Displayable {
 
 		public boolean onKeyUp(int keyCode, KeyEvent event) {
 			keyCode = convertAndroidKeyCode(keyCode);
-			if (overlay == null || !overlay.keyReleased(keyCode)) {
+			if (overlay == null) {
 				postEvent(CanvasEvent.getInstance(Canvas.this, CanvasEvent.KEY_RELEASED, keyCode));
 			}
 			return super.onKeyUp(keyCode, event);
@@ -289,7 +289,7 @@ public abstract class Canvas extends Displayable {
 		public void recycle() {
 		}
 
-		public int enqueued = 0;
+		private int enqueued = 0;
 
 		public void enterQueue() {
 			enqueued++;
@@ -502,7 +502,7 @@ public abstract class Canvas extends Displayable {
 	 * @param x координата указателя на реальном экране
 	 * @return соответствующая координата указателя на виртуальном экране
 	 */
-	public float convertPointerX(float x) {
+	private float convertPointerX(float x) {
 		return (x - onX) * virtualWidth / onWidth;
 	}
 
@@ -512,7 +512,7 @@ public abstract class Canvas extends Displayable {
 	 * @param y координата указателя на реальном экране
 	 * @return соответствующая координата указателя на виртуальном экране
 	 */
-	public float convertPointerY(float y) {
+	private float convertPointerY(float y) {
 		return (y - onY) * virtualHeight / onHeight;
 	}
 

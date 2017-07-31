@@ -1,21 +1,22 @@
 package ua.naiksoftware.j2meloader;
 
 import android.Manifest;
-import android.app.ActionBar;
-import android.app.Activity;
-import android.app.FragmentManager;
-import android.content.Intent;
 import android.content.pm.PackageManager;
+import android.net.Uri;
 import android.os.Bundle;
 import android.support.v4.app.ActivityCompat;
+import android.support.v4.app.FragmentManager;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.widget.DrawerLayout;
+import android.support.v7.app.ActionBar;
+import android.support.v7.app.AppCompatActivity;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.widget.Toast;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 
@@ -23,9 +24,7 @@ import javax.microedition.shell.ConfigActivity;
 
 import ua.naiksoftware.util.FileUtils;
 
-import static android.content.Intent.FLAG_ACTIVITY_NEW_TASK;
-
-public class MainActivity extends Activity implements
+public class MainActivity extends AppCompatActivity implements
 		NavigationDrawerFragment.SelectedCallback {
 
 	private static final int MY_PERMISSIONS_REQUEST_WRITE_STORAGE = 0;
@@ -63,12 +62,21 @@ public class MainActivity extends Activity implements
 		} else {
 			setupActivity();
 		}
+		Uri uri = getIntent().getData();
+		if (savedInstanceState == null && uri != null) {
+			JarConverter converter = new JarConverter(this);
+			try {
+				converter.execute(FileUtils.getPath(this, uri), pathConverted);
+			} catch (FileNotFoundException e) {
+				e.printStackTrace();
+			}
+		}
 	}
 
 	private void setupActivity() {
 		setContentView(R.layout.activity_main);
 
-		mNavigationDrawerFragment = (NavigationDrawerFragment) getFragmentManager()
+		mNavigationDrawerFragment = (NavigationDrawerFragment) getSupportFragmentManager()
 				.findFragmentById(R.id.navigation_drawer);
 		mTitle = getTitle();
 
@@ -81,7 +89,7 @@ public class MainActivity extends Activity implements
 		bundle.putSerializable("apps", apps);
 		appsListFragment.setArguments(bundle);
 		// update the main content by replacing fragments
-		FragmentManager fragmentManager = getFragmentManager();
+		FragmentManager fragmentManager = getSupportFragmentManager();
 		fragmentManager.beginTransaction()
 				.replace(R.id.container, appsListFragment).commit();
 		updateApps();
@@ -104,7 +112,7 @@ public class MainActivity extends Activity implements
 	}
 
 	public void restoreActionBar() {
-		ActionBar actionBar = getActionBar();
+		ActionBar actionBar = getSupportActionBar();
 		actionBar.setDisplayShowTitleEnabled(true);
 		actionBar.setTitle(mTitle);
 	}
@@ -117,7 +125,7 @@ public class MainActivity extends Activity implements
 			// decide what to show in the action bar.
 			restoreActionBar();
 		}
-		MenuInflater inflater = new MenuInflater(this);
+		MenuInflater inflater = getMenuInflater();
 		inflater.inflate(R.menu.main, menu);
 		return super.onCreateOptionsMenu(menu);
 	}
@@ -125,15 +133,12 @@ public class MainActivity extends Activity implements
 	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
 		switch (item.getItemId()) {
+			case R.id.action_about:
+				AboutDialogFragment dialogFragment = new AboutDialogFragment();
+				dialogFragment.show(getSupportFragmentManager(), "about");
+				break;
 			case R.id.action_exit_app:
 				finish();
-				break;
-			case R.id.action_restart:
-				Intent intent = new Intent(this, MainActivity.class);
-				intent.addFlags(FLAG_ACTIVITY_NEW_TASK);
-				startActivity(intent);
-				finish();
-				System.exit(0);
 				break;
 		}
 		return super.onOptionsItemSelected(item);

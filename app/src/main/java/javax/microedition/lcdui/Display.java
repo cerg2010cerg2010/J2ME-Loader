@@ -17,7 +17,6 @@
 package javax.microedition.lcdui;
 
 import android.content.Context;
-import android.os.Bundle;
 import android.os.PowerManager;
 import android.os.Vibrator;
 
@@ -47,41 +46,6 @@ public class Display {
 					0xFF000080
 			};
 
-	public static class ScreenActivity extends MicroActivity {
-		public void onResume() {
-			super.onResume();
-			Display.getDisplay(null).changeActivity(this);
-		}
-
-		public void onStop() {
-			Display.getDisplay(null).activityStopped(this);
-			super.onStop();
-		}
-	}
-
-	public static class CanvasActivity extends MicroActivity {
-		public void onCreate(Bundle savedInstanceState) {
-			setFullScreenMode();
-			super.onCreate(savedInstanceState);
-		}
-
-		public void onResume() {
-			super.onResume();
-			Display.getDisplay(null).changeActivity(this);
-		}
-
-		public void onStop() {
-			Display.getDisplay(null).activityStopped(this);
-			super.onStop();
-		}
-	}
-
-	private static class AlertAdvancer implements CommandListener {
-		public void commandAction(Command c, Displayable d) {
-			Display.getDisplay(null).showCurrent();
-		}
-	}
-
 	private static Display instance;
 
 	private MIDlet context;
@@ -92,33 +56,39 @@ public class Display {
 	private static PowerManager.WakeLock wakelock;
 	private static Vibrator vibrator;
 
-	private AlertAdvancer advancer;
-
 	public static Display getDisplay(MIDlet midlet) {
 		if (instance == null) {
 			instance = new Display(midlet);
 		}
-
 		return instance;
 	}
 
 	private Display(MIDlet midlet) {
 		context = midlet;
-		advancer = new AlertAdvancer();
+	}
+
+	public static void initDisplay() {
+		instance = null;
 	}
 
 	public void setCurrent(Displayable disp) {
+		if (disp == null) {
+			ContextHolder.notifyPaused();
+			return;
+		}
 		changeCurrent(disp);
 		showCurrent();
 	}
 
-	public void setCurrent(Alert alert, Displayable disp) {
+	public void setCurrent(final Alert alert, Displayable disp) {
 		changeCurrent(disp);
-
-		alert.showDialog(activity != null ? activity : context.getMidletContext());
-
+		activity.runOnUiThread(new Runnable() {
+			@Override
+			public void run() {
+				alert.prepareDialog().show();
+			}
+		});
 		if (alert.finiteTimeout()) {
-			alert.setCommandListener(advancer);
 			(new Thread(alert)).start();
 		}
 	}
@@ -127,59 +97,35 @@ public class Display {
 		if (current instanceof Canvas) {
 			((Canvas) current).setOverlay(null);
 		}
-
 		if (disp instanceof Canvas) {
 			((Canvas) disp).setOverlay(ContextHolder.getVk());
 		}
-
 		current = disp;
 	}
 
-	private void changeActivity(MicroActivity subject) {
+	public void changeActivity(MicroActivity subject) {
 		if (subject == activity) {
 			context.startApp();
 		}
-
 		activity = subject;
-
 		showCurrent();
 	}
 
 	private void showCurrent() {
-		if (activity == null) {
-			activity = ContextHolder.getCurrentActivity();
-		}
-
+		boolean isCanvas = current instanceof Canvas;
 		if (activity != null) {
-			if (current instanceof Canvas) {
-				if (activity instanceof CanvasActivity) {
-					activity.setCurrent(current);
-				} else {
-					activity.startActivity(CanvasActivity.class);
-				}
+			if (activity.isCanvas() == isCanvas) {
+				activity.setCurrent(current);
 			} else {
-				if (activity instanceof ScreenActivity) {
-					activity.setCurrent(current);
-				} else {
-					activity.startActivity(ScreenActivity.class);
-				}
+				activity.startActivity(MicroActivity.class, isCanvas);
 			}
 		} else {
-			if (current instanceof Canvas) {
-				context.startActivity(CanvasActivity.class);
-			} else {
-				context.startActivity(ScreenActivity.class);
-			}
+			context.startActivity(MicroActivity.class, isCanvas);
 		}
 	}
 
-	private void activityStopped(MicroActivity subject) {
+	public void activityStopped(MicroActivity subject) {
 		if (subject == this.activity) {
-			/*
-             * ...а спрятали-то наше текущее Activity!
-			 * Нужно сообщить об этом мидлету...
-			 */
-
 			context.callPauseApp();
 		}
 	}
@@ -202,17 +148,14 @@ public class Display {
 				powermanager = (PowerManager) ContextHolder.getContext().getSystemService(Context.POWER_SERVICE);
 				wakelock = powermanager.newWakeLock(PowerManager.SCREEN_BRIGHT_WAKE_LOCK | PowerManager.ACQUIRE_CAUSES_WAKEUP, "Display.flashBacklight");
 			}
-
 			if (wakelock.isHeld()) {
 				wakelock.release();
 			}
-
 			if (duration > 0) {
 				wakelock.acquire(duration);
 			} else if (duration < 0) {
 				wakelock.acquire();
 			}
-
 			return true;
 		} catch (Throwable t) {
 			return false;
@@ -224,9 +167,7 @@ public class Display {
 			if (vibrator == null) {
 				vibrator = (Vibrator) ContextHolder.getContext().getSystemService(Context.VIBRATOR_SERVICE);
 			}
-
 			vibrator.vibrate(duration);
-
 			return true;
 		} catch (Throwable t) {
 			return false;

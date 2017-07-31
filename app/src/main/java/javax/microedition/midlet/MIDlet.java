@@ -23,6 +23,7 @@ import android.net.Uri;
 import java.util.LinkedHashMap;
 
 import javax.microedition.io.ConnectionNotFoundException;
+import javax.microedition.lcdui.MicroActivity;
 import javax.microedition.util.ContextHolder;
 
 import ua.naiksoftware.util.FileUtils;
@@ -43,10 +44,6 @@ public class MIDlet {
 	public static void setMidletContext(Context c) {
 		context = c;
 		ContextHolder.setContext(context);
-	}
-
-	public static Context getMidletContext() {
-		return context;
 	}
 
 	public static void initProps(LinkedHashMap<String, String> p) {
@@ -79,7 +76,6 @@ public class MIDlet {
 		if (!destroyAppCalled) {
 			ContextHolder.notifyDestroyed();
 		}
-		System.exit(1);
 	}
 
 	/**
@@ -155,8 +151,9 @@ public class MIDlet {
 		destroyAppCalled = false;
 	}
 
-	public void startActivity(Class cls) {
+	public void startActivity(Class cls, boolean isCanvas) {
 		Intent i = new Intent(context, cls);
+		i.putExtra(MicroActivity.INTENT_PARAM_IS_CANVAS, isCanvas);
 		context.startActivity(i);
 	}
 

@@ -23,6 +23,7 @@ import android.content.Intent;
 import android.os.Bundle;
 import android.view.KeyEvent;
 import android.view.Menu;
+import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.Window;
 import android.view.WindowManager;
@@ -34,13 +35,60 @@ import javax.microedition.util.ContextHolder;
 import ua.naiksoftware.j2meloader.R;
 
 public class MicroActivity extends Activity {
+	public final static String INTENT_PARAM_IS_CANVAS = "isCanvas";
 	private Displayable current;
 	private boolean visible;
+	private boolean isCanvas;
+
+	@Override
+	public void onCreate(Bundle savedInstanceState) {
+		super.onCreate(savedInstanceState);
+		ContextHolder.addActivityToPool(this);
+		isCanvas = getIntent().getBooleanExtra(INTENT_PARAM_IS_CANVAS, false);
+		if (isCanvas) {
+			Window wnd = getWindow();
+			wnd.requestFeature(Window.FEATURE_NO_TITLE);
+			wnd.addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
+		}
+	}
+
+	@Override
+	public void onResume() {
+		super.onResume();
+		ContextHolder.setCurrentActivity(this);
+		visible = true;
+		Display.getDisplay(null).changeActivity(this);
+	}
+
+	@Override
+	public void onPause() {
+		super.onPause();
+		ContextHolder.setCurrentActivity(null);
+		visible = false;
+	}
+
+	@Override
+	protected void onStop() {
+		super.onStop();
+		Display.getDisplay(null).activityStopped(this);
+	}
+
+	@Override
+	public void onDestroy() {
+		if (current != null) {
+			current.setParentActivity(null);
+		}
+		ContextHolder.compactActivityPool(this);
+		super.onDestroy();
+	}
+
+	public boolean isCanvas() {
+		return isCanvas;
+	}
 
 	private SimpleEvent msgSetCurent = new SimpleEvent() {
 		public void process() {
 			current.setParentActivity(MicroActivity.this);
-
 			setTitle(current.getTitle());
 			setContentView(current.getDisplayableView());
 		}
@@ -50,134 +98,75 @@ public class MicroActivity extends Activity {
 		if (current != null) {
 			current.setParentActivity(null);
 		}
-
 		current = disp;
-
-		if (disp != null) {
-			runOnUiThread(msgSetCurent);
-		} else {
-			ContextHolder.notifyPaused();
-		}
+		runOnUiThread(msgSetCurent);
 	}
 
 	public Displayable getCurrent() {
 		return current;
 	}
 
-	public void setFullScreenMode() {
-		Window wnd = getWindow();
-		wnd.requestFeature(Window.FEATURE_NO_TITLE);
-		wnd.addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
-	}
-
 	public boolean isVisible() {
 		return visible;
 	}
 
-	public void startActivity(Class cls) {
-		startActivity(cls, null);
+	public void showExitConfirmation() {
+		AlertDialog.Builder alertBuilder = new AlertDialog.Builder(this);
+		alertBuilder.setTitle(R.string.CONFIRMATION_REQUIRED)
+				.setMessage(R.string.FORCE_CLOSE_CONFIRMATION)
+				.setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
+					@Override
+					public void onClick(DialogInterface p1, int p2) {
+						Runnable r = new Runnable() {
+							public void run() {
+								try {
+									MIDlet.callDestroyApp(true);
+								} catch (Throwable ex) {
+									ex.printStackTrace();
+								}
+								ContextHolder.notifyDestroyed();
+							}
+						};
+						(new Thread(r)).start();
+					}
+				})
+				.setNegativeButton(android.R.string.no, null);
+		alertBuilder.create().show();
 	}
 
-	public void startActivity(Class cls, Bundle bundle) {
+	public void startActivity(Class cls, boolean isCanvas) {
 		Intent intent = new Intent(this, cls);
-		intent.addFlags(Intent.FLAG_ACTIVITY_REORDER_TO_FRONT);
-
-		if (bundle != null) {
-			intent.putExtras(bundle);
-		}
-
+		intent.putExtra(INTENT_PARAM_IS_CANVAS, isCanvas);
 		startActivity(intent);
-	}
-
-	public void onCreate(Bundle savedInstanceState) {
-		super.onCreate(savedInstanceState);
-		ContextHolder.addActivityToPool(this);
-	}
-
-	public void onResume() {
-		super.onResume();
-
-		ContextHolder.setCurrentActivity(this);
-		visible = true;
-	}
-
-	public void onPause() {
-		ContextHolder.setCurrentActivity(null);
-		visible = false;
-
-		super.onPause();
-	}
-
-	public void onDestroy() {
-		if (current != null) {
-			current.setParentActivity(null);
-		}
-
-		ContextHolder.compactActivityPool(this);
-		super.onDestroy();
 	}
 
 	@Override
 	public boolean onKeyDown(int keyCode, KeyEvent event) {
-		if (keyCode == KeyEvent.KEYCODE_BACK) {
-			event.startTracking();
-			return true;
+		switch (keyCode) {
+			case KeyEvent.KEYCODE_MENU:
+				return true;
+			case KeyEvent.KEYCODE_BACK:
+				openOptionsMenu();
+				return true;
 		}
 		return super.onKeyDown(keyCode, event);
 	}
 
 	@Override
-	public boolean onKeyUp(int keyCode, KeyEvent event) {
-		if (keyCode == KeyEvent.KEYCODE_BACK) {
-			return true;
-		}
-		return super.onKeyUp(keyCode, event);
-	}
-
-
-	@Override
-	public boolean onKeyLongPress(int keyCode, KeyEvent event) {
-		if (keyCode == KeyEvent.KEYCODE_BACK) {
-			AlertDialog.Builder alertBuilder = new AlertDialog.Builder(this);
-			alertBuilder.setTitle(R.string.CONFIRMATION_REQUIRED)
-					.setMessage(R.string.FORCE_CLOSE_CONFIRMATION)
-					.setPositiveButton(R.string.YES_CMD, new DialogInterface.OnClickListener() {
-						@Override
-						public void onClick(DialogInterface p1, int p2) {
-							Runnable r = new Runnable() {
-								public void run() {
-									try {
-										MIDlet.callDestroyApp(true);
-									} catch (Throwable ex) {
-										ex.printStackTrace();
-									}
-
-									ContextHolder.notifyDestroyed();
-									System.exit(1);
-								}
-							};
-
-							(new Thread(r)).start();
-						}
-					})
-					.setNegativeButton(R.string.NO_CMD, null);
-			alertBuilder.create().show();
-		}
-		return super.onKeyLongPress(keyCode, event);
-	}
-
-	public void onActivityResult(int requestCode, int resultCode, Intent data) {
-		ContextHolder.notifyOnActivityResult(requestCode, resultCode, data);
-	}
-
 	public boolean onPrepareOptionsMenu(Menu menu) {
 		if (current != null) {
-			current.populateMenu(menu);
+			menu.clear();
+			MenuInflater inflater = getMenuInflater();
+			inflater.inflate(R.menu.midlet, menu);
+			for (Command cmd : current.getCommands()) {
+				menu.add(Menu.NONE, cmd.hashCode(), cmd.getPriority(), cmd.getLabel());
+			}
 		}
 
 		return super.onPrepareOptionsMenu(menu);
 	}
 
+	@Override
 	public boolean onOptionsItemSelected(MenuItem item) {
 		if (current != null) {
 			current.menuItemSelected(item);
@@ -186,6 +175,7 @@ public class MicroActivity extends Activity {
 		return super.onOptionsItemSelected(item);
 	}
 
+	@Override
 	public boolean onContextItemSelected(MenuItem item) {
 		if (current instanceof Form) {
 			((Form) current).contextMenuItemSelected(item);

@@ -16,7 +16,6 @@
 
 package javax.microedition.lcdui;
 
-import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 
@@ -25,7 +24,10 @@ import java.util.ArrayList;
 import javax.microedition.lcdui.event.CommandActionEvent;
 import javax.microedition.lcdui.event.Event;
 import javax.microedition.lcdui.event.EventQueue;
+import javax.microedition.lcdui.pointer.VirtualKeyboard;
 import javax.microedition.util.ContextHolder;
+
+import ua.naiksoftware.j2meloader.R;
 
 public abstract class Displayable {
 	private MicroActivity parent;
@@ -113,20 +115,35 @@ public abstract class Displayable {
 		}
 	}
 
-	public void populateMenu(Menu menu) {
-		menu.clear();
-
-		for (Command cmd : commands) {
-			menu.add(Menu.NONE, cmd.hashCode(), cmd.getPriority(), cmd.getLabel());
+	private void switchLayoutEditMode(int mode) {
+		if (this instanceof Canvas && ContextHolder.getVk() != null) {
+			ContextHolder.getVk().switchLayoutEditMode(mode);
 		}
 	}
 
 	public boolean menuItemSelected(MenuItem item) {
+		int id = item.getItemId();
+		if (item.getGroupId() == R.id.action_group_common_settings) {
+			switch (id) {
+				case R.id.action_exit_midlet:
+					parent.showExitConfirmation();
+					break;
+				case R.id.action_layout_edit_mode:
+					switchLayoutEditMode(VirtualKeyboard.LAYOUT_KEYS);
+					break;
+				case R.id.action_layout_scale_mode:
+					switchLayoutEditMode(VirtualKeyboard.LAYOUT_SCALES);
+					break;
+				case R.id.action_layout_edit_finish:
+					switchLayoutEditMode(VirtualKeyboard.LAYOUT_EOF);
+					break;
+			}
+			return true;
+		}
+
 		if (listener == null) {
 			return false;
 		}
-
-		int id = item.getItemId();
 
 		for (Command cmd : commands) {
 			if (cmd.hashCode() == id) {
@@ -134,7 +151,6 @@ public abstract class Displayable {
 				return true;
 			}
 		}
-
 		return false;
 	}
 

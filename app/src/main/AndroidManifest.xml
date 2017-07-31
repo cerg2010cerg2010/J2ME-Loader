@@ -8,25 +8,60 @@
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.BLUETOOTH" />
     <uses-permission android:name="android.permission.BLUETOOTH_ADMIN" />
+    <uses-permission android:name="com.android.launcher.permission.INSTALL_SHORTCUT" />
 
     <application
         android:allowBackup="true"
         android:largeHeap="true"
         android:icon="@drawable/icon_java"
         android:label="@string/app_name"
-        android:theme="@style/AppTheme" >
+        android:name=".EmulatorApplication" >
         <activity
             android:name=".MainActivity"
+            android:theme="@style/AppTheme"
             android:configChanges="orientation|screenSize"
             android:label="@string/app_name" >
             <intent-filter>
                 <action android:name="android.intent.action.MAIN" />
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:mimeType="application/java-archive" />
+                <data android:host="*" />
+                <data android:scheme="file" />
+                <data android:scheme="content" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:mimeType="*/*" />
+                <data android:host="*"/>
+                <data android:scheme="file" />
+                <data android:scheme="content" />
+                <data android:pathPattern=".*\\.jar" />
+                <data android:pathPattern=".*\\..*\\.jar" />
+                <data android:pathPattern=".*\\..*\\..*\\.jar" />
+                <data android:pathPattern=".*\\..*\\..*\\..*\\.jar" />
+            </intent-filter>
         </activity>
-        <activity android:name="javax.microedition.shell.ConfigActivity" android:windowSoftInputMode="stateHidden"/>
-        <activity android:name="javax.microedition.lcdui.Display$ScreenActivity" />
-        <activity android:name="javax.microedition.lcdui.Display$CanvasActivity" />
+        <activity
+            android:name="javax.microedition.shell.ConfigActivity"
+            android:theme="@style/AppTheme"
+            android:windowSoftInputMode="stateHidden">
+            <intent-filter>
+                <action android:name="android.intent.action.CREATE_SHORTCUT" />
+                <category android:name="android.intent.category.DEFAULT" />
+            </intent-filter>
+        </activity>
+        <activity android:name="javax.microedition.lcdui.MicroActivity" />
+        <activity
+            android:name="com.devs.acr.ErrorReporterActivity"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar"
+            android:configChanges="orientation|screenSize" />
     </application>
 
 </manifest>

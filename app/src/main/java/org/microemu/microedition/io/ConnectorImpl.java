@@ -28,16 +28,13 @@ package org.microemu.microedition.io;
 
 import android.util.Log;
 
-import com.sun.cdc.io.ConnectionBaseInterface;
-
-import org.microemu.cldc.ClosedConnection;
-
 import java.io.IOException;
 import java.lang.reflect.Proxy;
 import java.security.AccessControlContext;
 import java.security.AccessController;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
+import java.util.Collections;
 import java.util.Vector;
 
 import javax.microedition.io.Connection;
@@ -98,9 +95,7 @@ public class ConnectorImpl extends ConnectorAdapter {
 		Class parent = klass;
 		while (parent != null) {
 			Class[] interfaces = parent.getInterfaces();
-			for (int i = 0; i < interfaces.length; i++) {
-				allInterfaces.add(interfaces[i]);
-			}
+			Collections.addAll(allInterfaces, interfaces);
 			parent = parent.getSuperclass();
 		}
 
@@ -139,19 +134,11 @@ public class ConnectorImpl extends ConnectorAdapter {
 				if (inst instanceof ConnectionImplementation) {
 					return ((ConnectionImplementation) inst).openConnection(name, mode, timeouts);
 				} else {
-					return ((ClosedConnection) inst).open(name);
+					throw new ClassNotFoundException();
 				}
 			} catch (ClassNotFoundException e) {
-				try {
-					className = "com.sun.cdc.io.j2me." + protocol + ".Protocol";
-					Class cl = Class.forName(className);
-					ConnectionBaseInterface base = (ConnectionBaseInterface) cl.newInstance();
-					return base.openPrim(name.substring(name.indexOf(':') + 1), mode, timeouts);
-				} catch (ClassNotFoundException ex) {
-					Log.d(TAG, "connection [" + protocol + "] class not found", e);
-					Log.d(TAG, "connection [" + protocol + "] class not found", ex);
-					throw new ConnectionNotFoundException("connection [" + protocol + "] class not found");
-				}
+				Log.d(TAG, "connection [" + protocol + "] class not found", e);
+				throw new ConnectionNotFoundException("connection [" + protocol + "] class not found");
 			}
 		} catch (InstantiationException e) {
 			Log.e(TAG, "Unable to create" + className, e);

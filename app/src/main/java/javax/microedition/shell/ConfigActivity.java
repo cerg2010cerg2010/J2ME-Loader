@@ -17,14 +17,13 @@
 package javax.microedition.shell;
 
 import android.annotation.SuppressLint;
-import android.app.Activity;
-import android.app.AlertDialog;
+import android.support.v7.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.res.Configuration;
 import android.os.Bundle;
 import android.os.Environment;
-import android.view.KeyEvent;
+import android.support.v7.app.AppCompatActivity;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -45,6 +44,7 @@ import java.util.LinkedHashMap;
 import java.util.Locale;
 
 import javax.microedition.lcdui.Canvas;
+import javax.microedition.lcdui.Display;
 import javax.microedition.lcdui.Font;
 import javax.microedition.lcdui.event.EventQueue;
 import javax.microedition.lcdui.pointer.VirtualKeyboard;
@@ -53,13 +53,12 @@ import javax.microedition.util.ContextHolder;
 import javax.microedition.util.param.DataContainer;
 import javax.microedition.util.param.SharedPreferencesContainer;
 
-import ua.naiksoftware.util.Log;
 import ua.naiksoftware.j2meloader.R;
 import ua.naiksoftware.util.FileUtils;
+import ua.naiksoftware.util.Log;
 import yuku.ambilwarna.AmbilWarnaDialog;
 
-public class ConfigActivity extends Activity implements
-		View.OnKeyListener, View.OnClickListener {
+public class ConfigActivity extends AppCompatActivity implements View.OnClickListener {
 
 	protected EditText tfScreenWidth;
 	protected EditText tfScreenHeight;
@@ -78,7 +77,6 @@ public class ConfigActivity extends Activity implements
 
 	protected SeekBar sbVKAlpha;
 	protected EditText tfVKHideDelay;
-	protected EditText tfVKLayoutKeyCode;
 	protected EditText tfVKFore;
 	protected EditText tfVKBack;
 	protected EditText tfVKSelFore;
@@ -127,7 +125,7 @@ public class ConfigActivity extends Activity implements
 	public void onCreate(Bundle savedInstanceState) {
 		super.onCreate(savedInstanceState);
 		setContentView(R.layout.config_all);
-		getActionBar().setDisplayHomeAsUpEnabled(true);
+		getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 		MIDlet.setMidletContext(this);
 		pathToMidletDir = getIntent().getDataString();
 		appName = getIntent().getStringExtra("name");
@@ -150,6 +148,7 @@ public class ConfigActivity extends Activity implements
 		System.setProperty("microedition.pim.version", "1.0");
 		System.setProperty("microedition.io.file.FileConnection.version", "1.0");
 		System.setProperty("microedition.locale", locale.toLowerCase());
+		System.setProperty("microedition.encoding", "ISO-8859-1");
 		System.setProperty("user.home", Environment.getExternalStorageDirectory().getAbsolutePath());
 
 		tfScreenWidth = (EditText) findViewById(R.id.tfScreenWidth);
@@ -169,7 +168,6 @@ public class ConfigActivity extends Activity implements
 
 		sbVKAlpha = (SeekBar) findViewById(R.id.sbVKAlpha);
 		tfVKHideDelay = (EditText) findViewById(R.id.tfVKHideDelay);
-		tfVKLayoutKeyCode = (EditText) findViewById(R.id.tfVKLayoutKeyCode);
 		tfVKFore = (EditText) findViewById(R.id.tfVKFore);
 		tfVKBack = (EditText) findViewById(R.id.tfVKBack);
 		tfVKSelFore = (EditText) findViewById(R.id.tfVKSelFore);
@@ -193,9 +191,8 @@ public class ConfigActivity extends Activity implements
 		addFontSizePreset("176 x 220", 15, 18, 22);
 		addFontSizePreset("240 x 320", 18, 22, 26);
 
-		tfVKLayoutKeyCode.setOnKeyListener(this);
-
 		findViewById(R.id.cmdScreenSizePresets).setOnClickListener(this);
+		findViewById(R.id.cmdSwapSizes).setOnClickListener(this);
 		findViewById(R.id.cmdFontSizePresets).setOnClickListener(this);
 		findViewById(R.id.cmdScreenBack).setOnClickListener(this);
 		findViewById(R.id.cmdVKBack).setOnClickListener(this);
@@ -231,6 +228,10 @@ public class ConfigActivity extends Activity implements
 		applyConfiguration(/* new MIDlet() */);// Настройка конфигурации перед
 		// запуском конструктора
 		// мидлета
+		File appSettings = new File(getFilesDir().getParent() + File.separator + "shared_prefs", appName + ".xml");
+		if (appSettings.exists() && !getIntent().getBooleanExtra("showSettings", false)) {
+			startMIDlet();
+		}
 	}
 
 	public void onPause() {
@@ -256,20 +257,13 @@ public class ConfigActivity extends Activity implements
 		addScreenSizePreset(132, 176);
 		addScreenSizePreset(176, 220);
 		addScreenSizePreset(240, 320);
-
-		int w2 = w / 2;
-		int h2 = h / 2;
+		addScreenSizePreset(640, 360);
+		addScreenSizePreset(800, 480);
 
 		if (w > h) {
-			addScreenSizePreset(h2 * 3 / 4, h2);
-			addScreenSizePreset(h2 * 4 / 3, h2);
-
 			addScreenSizePreset(h * 3 / 4, h);
 			addScreenSizePreset(h * 4 / 3, h);
 		} else {
-			addScreenSizePreset(w2, w2 * 4 / 3);
-			addScreenSizePreset(w2, w2 * 3 / 4);
-
 			addScreenSizePreset(w, w * 4 / 3);
 			addScreenSizePreset(w, w * 3 / 4);
 		}
@@ -320,8 +314,6 @@ public class ConfigActivity extends Activity implements
 		sbVKAlpha.setProgress(params.getInt("VirtualKeyboardAlpha", 64));
 		tfVKHideDelay.setText(Integer.toString(params.getInt(
 				"VirtualKeyboardDelay", -1)));
-		tfVKLayoutKeyCode.setText(Integer.toString(params.getInt(
-				"VirtualKeyboardLayoutKeyCode", KeyEvent.KEYCODE_MENU)));
 		tfVKBack.setText(Integer.toHexString(
 				params.getInt("VirtualKeyboardColorBackground", 0xD0D0D0))
 				.toUpperCase());
@@ -369,8 +361,6 @@ public class ConfigActivity extends Activity implements
 			editor.putInt("VirtualKeyboardAlpha", sbVKAlpha.getProgress());
 			editor.putInt("VirtualKeyboardDelay",
 					Integer.parseInt(tfVKHideDelay.getText().toString()));
-			editor.putInt("VirtualKeyboardLayoutKeyCode",
-					Integer.parseInt(tfVKLayoutKeyCode.getText().toString()));
 			editor.putInt("VirtualKeyboardColorBackground",
 					Integer.parseInt(tfVKBack.getText().toString(), 16));
 			editor.putInt("VirtualKeyboardColorForeground",
@@ -431,8 +421,6 @@ public class ConfigActivity extends Activity implements
 	private void setVirtualKeyboard() {
 		int vkAlpha = sbVKAlpha.getProgress();
 		int vkDelay = Integer.parseInt(tfVKHideDelay.getText().toString());
-		int vkLayoutKeyCode = Integer.parseInt(tfVKLayoutKeyCode.getText()
-				.toString());
 		int vkColorBackground = Integer.parseInt(tfVKBack.getText().toString(),
 				16);
 		int vkColorForeground = Integer.parseInt(tfVKFore.getText().toString(),
@@ -448,7 +436,6 @@ public class ConfigActivity extends Activity implements
 
 		vk.setOverlayAlpha(vkAlpha);
 		vk.setHideDelay(vkDelay);
-		vk.setLayoutEditKey(vkLayoutKeyCode);
 
 		if (keylayoutFile.exists()) {
 			try {
@@ -487,7 +474,7 @@ public class ConfigActivity extends Activity implements
 
 	@Override
 	public boolean onCreateOptionsMenu(Menu menu) {
-		MenuInflater inflater = new MenuInflater(this);
+		MenuInflater inflater = getMenuInflater();
 		inflater.inflate(R.menu.config, menu);
 		return super.onCreateOptionsMenu(menu);
 	}
@@ -496,25 +483,7 @@ public class ConfigActivity extends Activity implements
 	public boolean onOptionsItemSelected(MenuItem item) {
 		switch (item.getItemId()) {
 			case R.id.action_start:
-				try {
-					// Теперь применяем конфигурацию к запускаемому мидлету.
-
-					if (cxShowKeyboard.isChecked()) {
-						setVirtualKeyboard();
-					}
-					midlet = loadMIDlet();
-					applyConfiguration();
-					midlet.start();
-					finish();
-				} catch (Throwable t) {
-					t.printStackTrace();
-					AlertDialog.Builder builder = new AlertDialog.Builder(this)
-							.setIcon(android.R.drawable.ic_dialog_alert)
-							.setTitle(R.string.error)
-							.setMessage(t.getMessage());
-					builder.show();
-				}
-
+				startMIDlet();
 				break;
 			case R.id.action_reset:
 				SharedPreferencesContainer params = new SharedPreferencesContainer(
@@ -537,14 +506,26 @@ public class ConfigActivity extends Activity implements
 		return super.onOptionsItemSelected(item);
 	}
 
-	public boolean onKey(View v, int keyCode, KeyEvent event) {
-		if (v == tfVKLayoutKeyCode
-				&& (event.getFlags() & KeyEvent.FLAG_SOFT_KEYBOARD) == 0) {
-			tfVKLayoutKeyCode.setText(Integer.toString(keyCode));
-			return true;
-		}
+	private void startMIDlet() {
+		try {
+			// Теперь применяем конфигурацию к запускаемому мидлету.
+			if (cxShowKeyboard.isChecked()) {
+				setVirtualKeyboard();
+			}
 
-		return false;
+			Display.initDisplay();
+			midlet = loadMIDlet();
+			applyConfiguration();
+			midlet.start();
+			finish();
+		} catch (Throwable t) {
+			t.printStackTrace();
+			AlertDialog.Builder builder = new AlertDialog.Builder(this)
+					.setIcon(android.R.drawable.ic_dialog_alert)
+					.setTitle(R.string.error)
+					.setMessage(t.getMessage());
+			builder.show();
+		}
 	}
 
 	public void setLanguage(int which) {
@@ -572,6 +553,10 @@ public class ConfigActivity extends Activity implements
 							.get(which)));
 				}
 			};
+		} else if (id == R.id.cmdSwapSizes) {
+			String tmp = tfScreenWidth.getText().toString();
+			tfScreenWidth.setText(tfScreenHeight.getText().toString());
+			tfScreenHeight.setText(tmp);
 		} else if (id == R.id.cmdFontSizePresets) {
 			presets = fontAdapter.toArray(new String[0]);
 

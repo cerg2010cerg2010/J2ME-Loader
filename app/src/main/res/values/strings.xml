@@ -4,8 +4,13 @@
     <string name="app_name" translatable="false">J2me Loader</string>
     <string name="navigation_drawer_open" translatable="false">Open navigation drawer</string>
     <string name="navigation_drawer_close" translatable="false">Close navigation drawer</string>
+
     <string name="exit">Exit</string>
-    <string name="action_settings">Settings</string>
+    <string name="about">About</string>
+    <string name="about_message">This app allows you to launch J2ME apps and games on Android. It supports most 2D games and also 3D with some limitations.&lt;BR></string>
+    <string name="about_email" translatable="false">&lt;BR>Email: &lt;a href="mailto:nikita36078@gmail.com">nikita36078@gmail.com&lt;/a></string>
+    <string name="about_github" translatable="false">&lt;BR>GitHub: &lt;a href="https://github.com/nikita36078/J2ME-Loader">github.com/nikita36078/J2ME-Loader&lt;/a></string>
+    <string name="about_4pda" translatable="false">&lt;BR>4PDA: &lt;a href="http://4pda.ru/forum/index.php?showtopic=824201">4pda.ru/forum/index.php?showtopic=824201&lt;/a></string>
     <string name="open_jar">Open jar</string>
     <string name="author">Author: </string>
     <string name="version">Version: </string>
@@ -13,7 +18,16 @@
     <string name="message_delete">Do you really want to delete this app?</string>
     <string name="converting_wait">Converting JAR...</string>
     <string name="convert_complete">Complete</string>
+    <string name="converting_message">Processing...</string>
+    <string name="permission_request_failed">This app requires storage write permission</string>
+    <string name="action_context_shortcut">Add shortcut</string>
+    <string name="action_context_settings">Settings</string>
+    <string name="action_context_delete">Delete</string>
 
+    <string name="START_CMD" formatted="false">Start</string>
+    <string name="CANCEL_CMD" formatted="false">Cancel</string>
+    <string name="RESET_CMD" formatted="false">Reset</string>
+    <string name="RESET_LAYOUT_CMD">Reset keylayout</string>
     <string name="PREF_SCREEN_OPTIONS" formatted="false">Screen options</string>
     <string name="PREF_SCALE_TO_FIT" formatted="false">Scale to fit</string>
     <string name="PREF_KEEP_ASPECT_RATIO" formatted="false">Keep aspect ratio</string>
@@ -34,9 +48,6 @@
     <string name="PREF_VK_ALPHA" formatted="false">Opacity: </string>
     <string name="PREF_VK_HIDE_DELAY" formatted="false">Hide delay: </string>
     <string name="PREF_UNIT_MS" formatted="false">ms</string>
-    <string name="PREF_CUSTOMIZE_VK_LAYOUT" formatted="false">Keycode for the layout customization launch: </string>
-    <string name="START_CMD" formatted="false">Start</string>
-    <string name="CANCEL_CMD" formatted="false">Cancel</string>
     <string name="PREF_VK_SEL_FORE" formatted="false">Labels (P)</string>
     <string name="PREF_VK_SEL_BACK" formatted="false">Buttons (P)</string>
     <string name="PREF_VK_KEY_SIZES" formatted="false">Key sizes</string>
@@ -45,28 +56,27 @@
     <string name="PREF_VK_NUM_KEYS" formatted="false">Digits: </string>
     <string name="PREF_VK_FIRE_KEY" formatted="false">Fire: </string>
     <string name="PREF_VK_SIZE_HINT" formatted="false">Size</string>
-    <string name="RESET_CMD" formatted="false">Reset</string>
     <string name="SIZE_PRESETS" formatted="false">Presets</string>
-    <string name="PREF_KEY_CODE_HINT" formatted="false">Key code</string>
     <string name="PREF_LANGUAGE" formatted="false">Language: %A</string>
     <string name="PREF_MISC" formatted="false">Misc options</string>
+    <string name="PREF_VK_SHOW">Show keyboard</string>
+    <string name="PREF_IMMEDIATE">Immediate processing mode</string>
+    <string name="PREF_CLEAR_BUFFER">Draw buffer clearing</string>
+    <string name="SWAP_SIZES">Swap sizes</string>
+    <string name="error">Error</string>
+
     <string name="FORCE_CLOSE_CONFIRMATION" formatted="false">Force-closing the application may result in data loss or even break it completely!\nProceed?</string>
     <string name="CONFIRMATION_REQUIRED" formatted="false">Confirmation required</string>
-    <string name="YES_CMD" formatted="false">Yes</string>
-    <string name="NO_CMD" formatted="false">No</string>
+    <string name="crash_dialog_message">Do you want to send error report to the developer?</string>
+    <string name="crash_dialog_title">Error detected</string>
+    <string name="report_crash">Send</string>
+    <string name="layout_edit_finished">Edit mode finished</string>
+    <string name="layout_edit_finish">Finish edit mode</string>
+    <string name="layout_edit_mode">Keylayout edit mode</string>
+    <string name="layout_scale_mode">Keylayout resize mode</string>
+    <string name="common_settings">[COMMON SETTINGS]</string>
+
     <string name="_RESOLUTION_SEPARATOR" translatable="false">x</string>
     <string name="_FONT_SEPARATOR" translatable="false">-</string>
     <string name="_MINUS_ONE" translatable="false">-1</string>
-    <string name="converting_message">Processing...</string>
-    <string name="action_restart">Restart</string>
-    <string name="PREF_VK_SHOW">Show keyboard</string>
-    <string name="error">Error</string>
-    <string name="PREF_IMMEDIATE">Immediate processing mode</string>
-    <string name="permission_request_failed">This app requires storage write permission</string>
-    <string name="PREF_CLEAR_BUFFER">Draw buffer clearing</string>
-    <string name="layout_edit_mode">Keylayout edit mode</string>
-    <string name="layout_resize_mode">Keylayout resize mode</string>
-    <string name="layout_edit_finished">Edit mode finished</string>
-    <string name="RESET_LAYOUT_CMD">Reset keylayout</string>
-
 </resources>

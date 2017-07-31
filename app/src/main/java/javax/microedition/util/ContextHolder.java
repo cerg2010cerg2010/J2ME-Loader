@@ -17,7 +17,6 @@
 package javax.microedition.util;
 
 import android.content.Context;
-import android.content.Intent;
 import android.os.Environment;
 import android.view.Display;
 import android.view.WindowManager;
@@ -45,7 +44,6 @@ public class ContextHolder {
 	private static VirtualKeyboard vk;
 	private static MicroActivity currentActivity;
 	private static ArrayList<WeakReference<MicroActivity>> activityPool = new ArrayList();
-	private static ArrayList<ActivityResultListener> resultListeners = new ArrayList();
 	private static AndroidRecordStoreManager recordStoreManager = new AndroidRecordStoreManager();
 
 	public static void setContext(Context cx) {

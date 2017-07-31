@@ -22,6 +22,7 @@ import android.text.InputFilter;
 import android.text.InputType;
 import android.view.View;
 import android.widget.EditText;
+import android.support.v7.widget.AppCompatEditText;
 
 public class TextField extends Item {
 	public static final int ANY = 0;
@@ -44,7 +45,7 @@ public class TextField extends Item {
 	private int maxSize;
 	private int constraints;
 
-	private class InternalEditText extends EditText {
+	private class InternalEditText extends AppCompatEditText {
 		public InternalEditText(Context context) {
 			super(context);
 		}

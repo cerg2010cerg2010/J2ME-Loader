@@ -1,5 +1,6 @@
 /*
  * Copyright 2012 Kulikov Dmitriy
+ * Copyright 2017 Nikita Shakarun
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,12 +17,12 @@
 
 package javax.microedition.lcdui;
 
+import android.annotation.TargetApi;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.DashPathEffect;
 import android.graphics.Paint;
 import android.graphics.Path;
-import android.graphics.Point;
 import android.graphics.PorterDuff;
 import android.graphics.Rect;
 import android.graphics.RectF;
@@ -54,10 +55,6 @@ public class Graphics {
 	private RectF floatRect;
 	private Path path;
 
-	private Point windowOrg;
-	private Rect windowClip;
-	private boolean useWindow;
-
 	private DashPathEffect dpeffect;
 	private int stroke;
 
@@ -85,10 +82,6 @@ public class Graphics {
 
 		font = Font.getDefaultFont();
 
-		windowOrg = new Point();
-		windowClip = new Rect();
-		useWindow = false;
-
 		intRect = new Rect();
 		floatRect = new RectF();
 		path = new Path();
@@ -115,20 +108,10 @@ public class Graphics {
 	}
 
 	private Path computePath(int[] xPoints, int xOffset, int[] yPoints, int yOffset, int nPoints) {
-		Path path = new Path();
-		int i4 = xOffset + 1;
-		int i5 = yOffset + 1;
+		path.reset();
 		path.moveTo((float) xPoints[xOffset], (float) yPoints[yOffset]);
-		int i6 = i5;
-		i5 = i4;
-		i4 = 1;
-		while (i4 < nPoints) {
-			int i7 = i5 + 1;
-			int i8 = i6 + 1;
-			path.lineTo((float) xPoints[i5], (float) yPoints[i6]);
-			i5 = i7;
-			i6 = i8;
-			i4++;
+		for (int i = 1; i < nPoints; i++) {
+			path.lineTo((float) xPoints[xOffset + i], (float) yPoints[yOffset + i]);
 		}
 		path.close();
 		return path;
@@ -230,38 +213,13 @@ public class Graphics {
 		return font;
 	}
 
-	public void setWindow(int x, int y, int width, int height) {
-		windowOrg.set(x, y);
-		windowClip.set(0, 0, width, height);
-
-		canvas.translate(x, y);
-		canvas.clipRect(windowClip, Region.Op.REPLACE);
-
-		useWindow = true;
-	}
-
-	public void resetWindow() {
-		canvas.translate(-windowOrg.x, -windowOrg.y);
-
-		windowClip.set(0, 0, canvas.getWidth(), canvas.getHeight());
-		canvas.clipRect(windowClip, Region.Op.REPLACE);
-
-		useWindow = false;
-	}
-
 	public void resetClip() {
 		setClip(0, 0, canvas.getWidth(), canvas.getHeight());
 	}
 
 	public void setClip(int x, int y, int width, int height) {
 		intRect.set(x, y, x + width, y + height);
-
-		if (useWindow) {
-			canvas.clipRect(windowClip, Region.Op.REPLACE);
-			canvas.clipRect(intRect, Region.Op.INTERSECT);
-		} else {
-			canvas.clipRect(intRect, Region.Op.REPLACE);
-		}
+		canvas.clipRect(intRect, Region.Op.REPLACE);
 	}
 
 	public void clipRect(int x, int y, int width, int height) {
@@ -382,14 +340,7 @@ public class Graphics {
 	}
 
 	public void fillTriangle(int x1, int y1, int x2, int y2, int x3, int y3) {
-		path.reset();
-
-		path.moveTo(x1, y1);
-		path.lineTo(x2, y2);
-		path.lineTo(x3, y3);
-		path.close();
-
-		canvas.drawPath(path, fillPaint);
+		fillPolygon(new int[]{x1, x2, x3}, 0, new int[]{y1, y2, y3}, 0, 3);
 	}
 
 	public void drawChar(char character, int x, int y, int anchor) {
@@ -512,6 +463,14 @@ public class Graphics {
 	}
 
 	public void drawRGB(int[] rgbData, int offset, int scanlength, int x, int y, int width, int height, boolean processAlpha) {
+		// MIDP allows almost any value of scanlength, drawBitmap is more strict with the stride
+		if (scanlength < width) {
+			scanlength = width;
+		}
+		int rows = rgbData.length / scanlength;
+		if (rows < height) {
+			height = rows;
+		}
 		canvas.drawBitmap(rgbData, offset, scanlength, x, y, width, height, processAlpha, drawPaint);
 	}
 

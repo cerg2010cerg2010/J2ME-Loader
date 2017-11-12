@@ -1,40 +1,46 @@
 /*
- * Copyright 2012 Kulikov Dmitriy
+ * J2ME Loader
+ * Copyright (C) 2017 Nikita Shakarun
  *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
  *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package javax.microedition.lcdui;
+package javax.microedition.shell;
 
-import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
+import android.support.v7.app.AppCompatActivity;
 import android.view.KeyEvent;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
-import android.view.Window;
-import android.view.WindowManager;
 
+import javax.microedition.lcdui.Command;
+import javax.microedition.lcdui.Display;
+import javax.microedition.lcdui.Displayable;
+import javax.microedition.lcdui.Form;
 import javax.microedition.lcdui.event.SimpleEvent;
 import javax.microedition.midlet.MIDlet;
 import javax.microedition.util.ContextHolder;
 
 import ua.naiksoftware.j2meloader.R;
 
-public class MicroActivity extends Activity {
+public class MicroActivity extends AppCompatActivity {
 	public final static String INTENT_PARAM_IS_CANVAS = "isCanvas";
 	private Displayable current;
 	private boolean visible;
@@ -45,10 +51,16 @@ public class MicroActivity extends Activity {
 		super.onCreate(savedInstanceState);
 		ContextHolder.addActivityToPool(this);
 		isCanvas = getIntent().getBooleanExtra(INTENT_PARAM_IS_CANVAS, false);
+		SharedPreferences sp = PreferenceManager.getDefaultSharedPreferences(this);
+		boolean isActionBarEnabled = sp.getBoolean("pref_actionbar_switch", false);
 		if (isCanvas) {
-			Window wnd = getWindow();
-			wnd.requestFeature(Window.FEATURE_NO_TITLE);
-			wnd.addFlags(WindowManager.LayoutParams.FLAG_FULLSCREEN);
+			setTheme(R.style.AppTheme_Fullscreen);
+			getSupportActionBar().setTitle(MyClassLoader.getName());
+			if (!isActionBarEnabled) {
+				getSupportActionBar().hide();
+			}
+		} else {
+			setTheme(R.style.AppTheme);
 		}
 	}
 
@@ -143,10 +155,7 @@ public class MicroActivity extends Activity {
 	@Override
 	public boolean onKeyDown(int keyCode, KeyEvent event) {
 		switch (keyCode) {
-			case KeyEvent.KEYCODE_MENU:
-				return true;
 			case KeyEvent.KEYCODE_BACK:
-				openOptionsMenu();
 				return true;
 		}
 		return super.onKeyDown(keyCode, event);
@@ -159,7 +168,7 @@ public class MicroActivity extends Activity {
 			MenuInflater inflater = getMenuInflater();
 			inflater.inflate(R.menu.midlet, menu);
 			for (Command cmd : current.getCommands()) {
-				menu.add(Menu.NONE, cmd.hashCode(), cmd.getPriority(), cmd.getLabel());
+				menu.add(Menu.NONE, cmd.hashCode(), Menu.NONE, cmd.getLabel());
 			}
 		}
 

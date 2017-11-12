@@ -1,5 +1,6 @@
 /*
  * Copyright 2012 Kulikov Dmitriy
+ * Copyright 2017 Nikita Shakarun
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -30,7 +31,7 @@ import java.io.InputStream;
 import java.lang.ref.WeakReference;
 import java.util.ArrayList;
 
-import javax.microedition.lcdui.MicroActivity;
+import javax.microedition.shell.MicroActivity;
 import javax.microedition.lcdui.pointer.VirtualKeyboard;
 import javax.microedition.rms.impl.AndroidRecordStoreManager;
 import javax.microedition.shell.MyClassLoader;
@@ -163,7 +164,7 @@ public class ContextHolder {
 	}
 
 	public static File getFileByName(String name) {
-		File dir = new File(context.getFilesDir() + MyClassLoader.getName());
+		File dir = new File(context.getFilesDir(), MyClassLoader.getName());
 		if (!dir.exists()) {
 			dir.mkdir();
 		}

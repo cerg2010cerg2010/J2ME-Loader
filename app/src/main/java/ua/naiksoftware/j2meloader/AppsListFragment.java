@@ -1,5 +1,27 @@
+/*
+ * J2ME Loader
+ * Copyright (C) 2015-2016 Nickolay Savchenko
+ * Copyright (C) 2017 Nikita Shakarun
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package ua.naiksoftware.j2meloader;
 
+import android.support.v4.content.pm.ShortcutInfoCompat;
+import android.support.v4.content.pm.ShortcutManagerCompat;
+import android.support.v4.graphics.drawable.IconCompat;
 import android.support.v7.app.AlertDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -22,9 +44,6 @@ import javax.microedition.shell.ConfigActivity;
 
 import ua.naiksoftware.util.FileUtils;
 
-/**
- * @author Naik
- */
 public class AppsListFragment extends ListFragment {
 
 	private ArrayList<AppItem> apps;
@@ -85,13 +104,17 @@ public class AppsListFragment extends ListFragment {
 		switch (item.getItemId()) {
 			case R.id.action_context_shortcut:
 				Bitmap bitmap = BitmapFactory.decodeFile(appItem.getImagePath());
-				Intent intent = new Intent("com.android.launcher.action.INSTALL_SHORTCUT");
 				Intent launchIntent = new Intent(Intent.ACTION_DEFAULT, Uri.parse(appItem.getPath()), getActivity(), ConfigActivity.class);
 				launchIntent.putExtra("name", appItem.getTitle());
-				intent.putExtra(Intent.EXTRA_SHORTCUT_INTENT, launchIntent);
-				intent.putExtra(Intent.EXTRA_SHORTCUT_NAME, appItem.getTitle());
-				intent.putExtra(Intent.EXTRA_SHORTCUT_ICON, bitmap);
-				getActivity().sendBroadcast(intent);
+				ShortcutInfoCompat.Builder shortcutInfoCompatBuilder = new ShortcutInfoCompat.Builder(getActivity(), appItem.getTitle())
+						.setIntent(launchIntent)
+						.setShortLabel(appItem.getTitle());
+				if (bitmap != null) {
+					shortcutInfoCompatBuilder.setIcon(IconCompat.createWithBitmap(bitmap));
+				} else {
+					shortcutInfoCompatBuilder.setIcon(IconCompat.createWithResource(getActivity(), R.mipmap.ic_launcher));
+				}
+				ShortcutManagerCompat.requestPinShortcut(getActivity(), shortcutInfoCompatBuilder.build(), null);
 				break;
 			case R.id.action_context_settings:
 				Intent i = new Intent(Intent.ACTION_DEFAULT, Uri.parse(appItem.getPath()), getActivity(), ConfigActivity.class);

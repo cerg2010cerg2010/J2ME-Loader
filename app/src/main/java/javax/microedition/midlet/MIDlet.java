@@ -1,5 +1,7 @@
 /*
- * Copyright 2012 Kulikov Dmitriy, Naik
+ * Copyright 2012 Kulikov Dmitriy
+ * Copyright 2015-2016 Nickolay Savchenko
+ * Copyright 2017 Nikita Shakarun
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,7 +25,7 @@ import android.net.Uri;
 import java.util.LinkedHashMap;
 
 import javax.microedition.io.ConnectionNotFoundException;
-import javax.microedition.lcdui.MicroActivity;
+import javax.microedition.shell.MicroActivity;
 import javax.microedition.util.ContextHolder;
 
 import ua.naiksoftware.util.FileUtils;

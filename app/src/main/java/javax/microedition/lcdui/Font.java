@@ -1,5 +1,6 @@
 /*
  * Copyright 2012 Kulikov Dmitriy
+ * Copyright 2017 Nikita Shakarun
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -88,6 +89,13 @@ public class Font {
 
 		paint.setTextSize(size);                                             // сначала просто задаем размер (не важно в чем он здесь ставится)
 		paint.setTextSize(size * size / (paint.descent() - paint.ascent())); // а теперь ставим размер точно равный заданному (в пикселях)
+	}
+
+	// Font for keyboard
+	public Font() {
+		paint = new Paint();
+		float size = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, sizes[1], ContextHolder.getContext().getResources().getDisplayMetrics());
+		paint.setTextSize(size);
 	}
 
 	public static Font getFont(int face, int style, int size) {

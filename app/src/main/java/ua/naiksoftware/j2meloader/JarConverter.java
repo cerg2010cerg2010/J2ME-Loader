@@ -1,3 +1,22 @@
+/*
+ * J2ME Loader
+ * Copyright (C) 2015-2016 Nickolay Savchenko
+ * Copyright (C) 2017 Nikita Shakarun
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package ua.naiksoftware.j2meloader;
 
 import android.app.ProgressDialog;
@@ -30,6 +49,7 @@ public class JarConverter extends AsyncTask<String, String, Boolean> {
 
 	private String appDir;
 	private final File dirTmp;
+	private static String targetJarName;
 
 	public JarConverter(MainActivity context) {
 		this.context = context;
@@ -40,6 +60,7 @@ public class JarConverter extends AsyncTask<String, String, Boolean> {
 	@Override
 	protected Boolean doInBackground(String... p1) {
 		String pathToJar = p1[0];
+		targetJarName = pathToJar.substring(pathToJar.lastIndexOf('/') + 1);
 		String pathConverted = p1[1];
 		Log.d(tag, "doInBackground$ pathToJar=" + pathToJar + " pathConverted="
 				+ pathConverted);
@@ -60,7 +81,12 @@ public class JarConverter extends AsyncTask<String, String, Boolean> {
 		}
 		appDir = FileUtils.loadManifest(
 				new File(dirTmp, "/META-INF/MANIFEST.MF")).get("MIDlet-Name");
-		appDir = appDir.replace(":", "");
+		if (appDir == null) {
+			err = "Brocken manifest";
+			deleteTemp();
+			return false;
+		}
+		appDir = appDir.replace(":", "").replace("/", "");
 		File appConverted = new File(pathConverted, appDir);
 		FileUtils.deleteDirectory(appConverted);
 		appConverted.mkdirs();
@@ -138,5 +164,9 @@ public class JarConverter extends AsyncTask<String, String, Boolean> {
 		if (uriDir.exists()) {
 			FileUtils.deleteDirectory(uriDir);
 		}
+	}
+
+	public static String getTargetJarName() {
+		return targetJarName;
 	}
 }

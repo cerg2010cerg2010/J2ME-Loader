@@ -1,5 +1,6 @@
 /*
  * Copyright 2012 Kulikov Dmitriy
+ * Copyright 2017 Nikita Shakarun
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -50,4 +51,6 @@ public interface Player extends Controllable {
 	public void addPlayerListener(PlayerListener playerListener);
 
 	public void removePlayerListener(PlayerListener playerListener);
+
+	public String getContentType();
 }

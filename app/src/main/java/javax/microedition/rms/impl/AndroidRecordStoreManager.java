@@ -1,6 +1,7 @@
 /**
  * MicroEmulator
  * Copyright (C) 2008 Bartek Teodorczyk <barteo@barteo.net>
+ * Copyright (C) 2017 Nikita Shakarun
  * <p>
  * It is licensed under the following two licenses as alternatives:
  * 1. GNU Lesser General Public License (the "LGPL") version 2.1 or any newer version
@@ -72,7 +73,7 @@ public class AndroidRecordStoreManager implements RecordStoreManager {
 		this.activity = ContextHolder.getContext();
 		if (recordStores == null) {
 			recordStores = new ConcurrentHashMap<String, Object>();
-			String[] list = new File(activity.getFilesDir() + MyClassLoader.getName()).list();
+			String[] list = new File(activity.getFilesDir(), MyClassLoader.getName()).list();
 			if (list != null && list.length > 0) {
 				for (int i = 0; i < list.length; i++) {
 					if (list[i].endsWith(RECORD_STORE_HEADER_SUFFIX)) {

@@ -1,5 +1,7 @@
 /*
- * Copyright 2012 Kulikov Dmitriy, Naik
+ * Copyright 2012 Kulikov Dmitriy
+ * Copyright 2015-2016 Nickolay Savchenko
+ * Copyright 2017 Nikita Shakarun
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,6 +26,8 @@ import android.content.res.Configuration;
 import android.os.Bundle;
 import android.os.Environment;
 import android.support.v7.app.AppCompatActivity;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -63,6 +67,8 @@ public class ConfigActivity extends AppCompatActivity implements View.OnClickLis
 	protected EditText tfScreenWidth;
 	protected EditText tfScreenHeight;
 	protected EditText tfScreenBack;
+	protected SeekBar sbScaleRatio;
+	protected EditText tfScaleRatioValue;
 	protected CheckBox cxScaleToFit;
 	protected CheckBox cxKeepAspectRatio;
 	protected CheckBox cxFilter;
@@ -96,6 +102,7 @@ public class ConfigActivity extends AppCompatActivity implements View.OnClickLis
 
 	private MIDlet midlet;
 	private File keylayoutFile;
+	private SharedPreferencesContainer params;
 	public static String pathToMidletDir;
 	public static String appName;
 	public static final String MIDLET_RES_DIR = "/res/";
@@ -129,10 +136,10 @@ public class ConfigActivity extends AppCompatActivity implements View.OnClickLis
 		MIDlet.setMidletContext(this);
 		pathToMidletDir = getIntent().getDataString();
 		appName = getIntent().getStringExtra("name");
+		appName = appName.replace(":", "").replace("/", "");
 		keylayoutFile = new File(getFilesDir() + "/" + appName, "VirtualKeyboardLayout");
 
-		DataContainer params = new SharedPreferencesContainer(
-				appName, Context.MODE_PRIVATE, this);
+		params = new SharedPreferencesContainer(appName, Context.MODE_PRIVATE, this);
 
 		locale = params.getString("Locale", Locale.getDefault().getCountry());
 		System.setProperty("microedition.sensor.version", "1");
@@ -155,6 +162,8 @@ public class ConfigActivity extends AppCompatActivity implements View.OnClickLis
 		tfScreenHeight = (EditText) findViewById(R.id.tfScreenHeight);
 		tfScreenBack = (EditText) findViewById(R.id.tfScreenBack);
 		cxScaleToFit = (CheckBox) findViewById(R.id.cxScaleToFit);
+		sbScaleRatio = (SeekBar) findViewById(R.id.sbScaleRatio);
+		tfScaleRatioValue = (EditText) findViewById(R.id.tfScaleRatioValue);
 		cxKeepAspectRatio = (CheckBox) findViewById(R.id.cxKeepAspectRatio);
 		cxFilter = (CheckBox) findViewById(R.id.cxFilter);
 		cxImmediate = (CheckBox) findViewById(R.id.cxImmediate);
@@ -201,6 +210,34 @@ public class ConfigActivity extends AppCompatActivity implements View.OnClickLis
 		findViewById(R.id.cmdVKSelFore).setOnClickListener(this);
 		findViewById(R.id.cmdVKOutline).setOnClickListener(this);
 		findViewById(R.id.cmdLanguage).setOnClickListener(this);
+		sbScaleRatio.setOnSeekBarChangeListener(new SeekBar.OnSeekBarChangeListener() {
+			@Override
+			public void onProgressChanged(SeekBar seekBar, int progress, boolean b) {
+				tfScaleRatioValue.setText(String.valueOf(progress));
+			}
+
+			@Override
+			public void onStartTrackingTouch(SeekBar seekBar) {
+			}
+
+			@Override
+			public void onStopTrackingTouch(SeekBar seekBar) {
+			}
+		});
+
+		tfScaleRatioValue.addTextChangedListener(new TextWatcher() {
+			@Override
+			public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
+			@Override
+			public void onTextChanged(CharSequence s, int start, int before, int count) {
+				Integer enteredProgress = Integer.valueOf(s.toString());
+				sbScaleRatio.setProgress(enteredProgress);
+			}
+
+			@Override
+			public void afterTextChanged(Editable s) {}
+		});
 
 		loadParams(params);
 
@@ -235,9 +272,7 @@ public class ConfigActivity extends AppCompatActivity implements View.OnClickLis
 	}
 
 	public void onPause() {
-		SharedPreferencesContainer params = new SharedPreferencesContainer(
-				appName, Context.MODE_PRIVATE, this);
-		saveParams(params);
+		saveParams();
 		super.onPause();
 	}
 
@@ -294,6 +329,8 @@ public class ConfigActivity extends AppCompatActivity implements View.OnClickLis
 				.setText(Integer.toHexString(
 						params.getInt("ScreenBackgroundColor", 0xD0D0D0))
 						.toUpperCase());
+		sbScaleRatio.setProgress(params.getInt("ScreenScaleRatio", 100));
+		tfScaleRatioValue.setText(String.valueOf(sbScaleRatio.getProgress()));
 		cxScaleToFit.setChecked(params.getBoolean("ScreenScaleToFit", true));
 		cxKeepAspectRatio.setChecked(params.getBoolean("ScreenKeepAspectRatio",
 				true));
@@ -331,49 +368,50 @@ public class ConfigActivity extends AppCompatActivity implements View.OnClickLis
 				.toUpperCase());
 	}
 
-	public void saveParams(SharedPreferencesContainer editor) {
+	public void saveParams() {
 		try {
-			editor.edit();
-			editor.putString("Locale", locale);
+			params.edit();
+			params.putString("Locale", locale);
 
-			editor.putInt("ScreenWidth",
+			params.putInt("ScreenWidth",
 					Integer.parseInt(tfScreenWidth.getText().toString()));
-			editor.putInt("ScreenHeight",
+			params.putInt("ScreenHeight",
 					Integer.parseInt(tfScreenHeight.getText().toString()));
-			editor.putInt("ScreenBackgroundColor",
+			params.putInt("ScreenBackgroundColor",
 					Integer.parseInt(tfScreenBack.getText().toString(), 16));
-			editor.putBoolean("ScreenScaleToFit", cxScaleToFit.isChecked());
-			editor.putBoolean("ScreenKeepAspectRatio",
+			params.putInt("ScreenScaleRatio", sbScaleRatio.getProgress());
+			params.putBoolean("ScreenScaleToFit", cxScaleToFit.isChecked());
+			params.putBoolean("ScreenKeepAspectRatio",
 					cxKeepAspectRatio.isChecked());
-			editor.putBoolean("ScreenFilter", cxFilter.isChecked());
-			editor.putBoolean("ImmediateMode", cxImmediate.isChecked());
-			editor.putBoolean("ClearBuffer", cxClearBuffer.isChecked());
+			params.putBoolean("ScreenFilter", cxFilter.isChecked());
+			params.putBoolean("ImmediateMode", cxImmediate.isChecked());
+			params.putBoolean("ClearBuffer", cxClearBuffer.isChecked());
 
-			editor.putInt("FontSizeSmall",
+			params.putInt("FontSizeSmall",
 					Integer.parseInt(tfFontSizeSmall.getText().toString()));
-			editor.putInt("FontSizeMedium",
+			params.putInt("FontSizeMedium",
 					Integer.parseInt(tfFontSizeMedium.getText().toString()));
-			editor.putInt("FontSizeLarge",
+			params.putInt("FontSizeLarge",
 					Integer.parseInt(tfFontSizeLarge.getText().toString()));
-			editor.putBoolean("FontApplyDimensions", cxFontSizeInSP.isChecked());
-			editor.putBoolean("ShowKeyboard", cxShowKeyboard.isChecked());
+			params.putBoolean("FontApplyDimensions", cxFontSizeInSP.isChecked());
+			params.putBoolean("ShowKeyboard", cxShowKeyboard.isChecked());
 
-			editor.putInt("VirtualKeyboardAlpha", sbVKAlpha.getProgress());
-			editor.putInt("VirtualKeyboardDelay",
+			params.putInt("VirtualKeyboardAlpha", sbVKAlpha.getProgress());
+			params.putInt("VirtualKeyboardDelay",
 					Integer.parseInt(tfVKHideDelay.getText().toString()));
-			editor.putInt("VirtualKeyboardColorBackground",
+			params.putInt("VirtualKeyboardColorBackground",
 					Integer.parseInt(tfVKBack.getText().toString(), 16));
-			editor.putInt("VirtualKeyboardColorForeground",
+			params.putInt("VirtualKeyboardColorForeground",
 					Integer.parseInt(tfVKFore.getText().toString(), 16));
-			editor.putInt("VirtualKeyboardColorBackgroundSelected",
+			params.putInt("VirtualKeyboardColorBackgroundSelected",
 					Integer.parseInt(tfVKSelBack.getText().toString(), 16));
-			editor.putInt("VirtualKeyboardColorForegroundSelected",
+			params.putInt("VirtualKeyboardColorForegroundSelected",
 					Integer.parseInt(tfVKSelFore.getText().toString(), 16));
-			editor.putInt("VirtualKeyboardColorOutline",
+			params.putInt("VirtualKeyboardColorOutline",
 					Integer.parseInt(tfVKOutline.getText().toString(), 16));
 
-			editor.apply();
-			editor.close();
+			params.apply();
+			params.close();
 		} catch (Throwable t) {
 			t.printStackTrace();
 		}
@@ -395,6 +433,7 @@ public class ConfigActivity extends AppCompatActivity implements View.OnClickLis
 					.toString());
 			int screenBackgroundColor = Integer.parseInt(tfScreenBack.getText()
 					.toString(), 16);
+			int screenScaleRatio = sbScaleRatio.getProgress();
 			boolean screenScaleToFit = cxScaleToFit.isChecked();
 			boolean screenKeepAspectRatio = cxKeepAspectRatio.isChecked();
 			boolean screenFilter = cxFilter.isChecked();
@@ -407,7 +446,7 @@ public class ConfigActivity extends AppCompatActivity implements View.OnClickLis
 			Font.setApplyDimensions(fontApplyDimensions);
 
 			Canvas.setVirtualSize(screenWidth, screenHeight, screenScaleToFit,
-					screenKeepAspectRatio);
+					screenKeepAspectRatio, screenScaleRatio);
 			Canvas.setFilterBitmap(screenFilter);
 			EventQueue.setImmediate(immediateMode);
 			Canvas.setBackgroundColor(screenBackgroundColor);
@@ -486,9 +525,6 @@ public class ConfigActivity extends AppCompatActivity implements View.OnClickLis
 				startMIDlet();
 				break;
 			case R.id.action_reset:
-				SharedPreferencesContainer params = new SharedPreferencesContainer(
-						appName, Context.MODE_PRIVATE,
-						ConfigActivity.this);
 				params.edit().clear().commit();
 				params.close();
 				loadParams(params);
@@ -526,11 +562,6 @@ public class ConfigActivity extends AppCompatActivity implements View.OnClickLis
 					.setMessage(t.getMessage());
 			builder.show();
 		}
-	}
-
-	public void setLanguage(int which) {
-		locale = getResources().getStringArray(R.array.locales)[which];
-		recreate();
 	}
 
 	public void onClick(View v) {
@@ -575,7 +606,7 @@ public class ConfigActivity extends AppCompatActivity implements View.OnClickLis
 
 			presetListener = new DialogInterface.OnClickListener() {
 				public void onClick(DialogInterface dialog, int which) {
-					setLanguage(which);
+					locale = getResources().getStringArray(R.array.locales)[which];
 				}
 			};
 		} else if (id == R.id.cmdScreenBack) {

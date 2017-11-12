@@ -1,3 +1,22 @@
+/*
+ * J2ME Loader
+ * Copyright (C) 2015-2016 Nickolay Savchenko
+ * Copyright (C) 2017 Nikita Shakarun
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <http://www.gnu.org/licenses/>.
+ */
+
 package javax.microedition.shell;
 
 import java.io.File;
@@ -10,13 +29,10 @@ import dalvik.system.DexClassLoader;
 public class MyClassLoader extends DexClassLoader {
 
 	private static File resFolder;
-	private static String resFolderName;
 
 	public MyClassLoader(String paths, String tmpDir, String libs, ClassLoader parent, String resDir) {
 		super(paths, tmpDir, libs, parent);
 		resFolder = new File(resDir);
-		String[] segments = resDir.split("/");
-		resFolderName = "/" + segments[segments.length - 2] + "/";
 	}
 
 	@Override
@@ -29,6 +45,6 @@ public class MyClassLoader extends DexClassLoader {
 	}
 
 	public static String getName() {
-		return resFolderName;
+		return resFolder.getParentFile().getName();
 	}
 }

@@ -1,5 +1,7 @@
 /*
  * Copyright 2012 Kulikov Dmitriy
+ * Copyright 2015-2016 Nickolay Savchenko
+ * Copyright 2017 Nikita Shakarun
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +27,7 @@ import javax.microedition.lcdui.event.CommandActionEvent;
 import javax.microedition.lcdui.event.Event;
 import javax.microedition.lcdui.event.EventQueue;
 import javax.microedition.lcdui.pointer.VirtualKeyboard;
+import javax.microedition.shell.MicroActivity;
 import javax.microedition.util.ContextHolder;
 
 import ua.naiksoftware.j2meloader.R;
@@ -124,19 +127,24 @@ public abstract class Displayable {
 	public boolean menuItemSelected(MenuItem item) {
 		int id = item.getItemId();
 		if (item.getGroupId() == R.id.action_group_common_settings) {
-			switch (id) {
-				case R.id.action_exit_midlet:
-					parent.showExitConfirmation();
-					break;
-				case R.id.action_layout_edit_mode:
-					switchLayoutEditMode(VirtualKeyboard.LAYOUT_KEYS);
-					break;
-				case R.id.action_layout_scale_mode:
-					switchLayoutEditMode(VirtualKeyboard.LAYOUT_SCALES);
-					break;
-				case R.id.action_layout_edit_finish:
-					switchLayoutEditMode(VirtualKeyboard.LAYOUT_EOF);
-					break;
+			if (id == R.id.action_exit_midlet) {
+				parent.showExitConfirmation();
+			} else if (this instanceof Canvas && ContextHolder.getVk() != null) {
+				VirtualKeyboard vk = ContextHolder.getVk();
+				switch (id) {
+					case R.id.action_layout_edit_mode:
+						vk.switchLayoutEditMode(VirtualKeyboard.LAYOUT_KEYS);
+						break;
+					case R.id.action_layout_scale_mode:
+						vk.switchLayoutEditMode(VirtualKeyboard.LAYOUT_SCALES);
+						break;
+					case R.id.action_layout_edit_finish:
+						vk.switchLayoutEditMode(VirtualKeyboard.LAYOUT_EOF);
+						break;
+					case R.id.action_layout_switch:
+						vk.switchLayout();
+						break;
+				}
 			}
 			return true;
 		}
@@ -162,12 +170,10 @@ public abstract class Displayable {
 		queue.postEvent(event);
 	}
 
-	// Added by Naik
 	public int getWidth() {
 		return ContextHolder.getDisplayWidth();
 	}
 
-	// Added by Naik
 	public int getHeight() {
 		return ContextHolder.getDisplayHeight();
 	}

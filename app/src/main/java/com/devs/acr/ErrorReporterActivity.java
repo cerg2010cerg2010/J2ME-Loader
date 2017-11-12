@@ -21,14 +21,14 @@ public class ErrorReporterActivity extends Activity {
 
 		this.setFinishOnTouchOutside(false);
 
-		AlertDialog.Builder builder = new AlertDialog.Builder(this, R.style.AppDialogTheme)
+		AlertDialog.Builder builder = new AlertDialog.Builder(this, R.style.AppTheme_Dialog)
 				.setMessage(R.string.crash_dialog_message)
 				.setTitle(R.string.crash_dialog_title)
 				.setCancelable(false)
 				.setPositiveButton(R.string.report_crash, new DialogInterface.OnClickListener() {
 					@Override
 					public void onClick(DialogInterface dialogInterface, int i) {
-						AutoErrorReporter.get(getApplication()).checkErrorAndSendMail(ErrorReporterActivity.this);
+						AutoErrorReporter.get(getApplication()).checkErrorAndSendMail();
 						System.exit(10);
 					}
 				})

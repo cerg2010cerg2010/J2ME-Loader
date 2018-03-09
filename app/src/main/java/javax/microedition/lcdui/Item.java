@@ -71,10 +71,11 @@ public abstract class Item implements View.OnCreateContextMenuListener {
 
 	private Form owner;
 
-	private ArrayList<Command> commands = new ArrayList();
+	private ArrayList<Command> commands = new ArrayList<>();
 	private ItemCommandListener listener = null;
 
 	private SimpleEvent msgSetContextMenuListener = new SimpleEvent() {
+		@Override
 		public void process() {
 			if (listener != null) {
 				layout.setOnCreateContextMenuListener(Item.this);
@@ -89,6 +90,7 @@ public abstract class Item implements View.OnCreateContextMenuListener {
 	};
 
 	private SimpleEvent msgSetLabel = new SimpleEvent() {
+		@Override
 		public void process() {
 //			System.out.println("Changing label from " + Thread.currentThread());
 
@@ -245,6 +247,11 @@ public abstract class Item implements View.OnCreateContextMenuListener {
 		}
 	}
 
+	public void setPreferredSize(int width, int height) {
+		// TODO Implement this method
+	}
+
+	@Override
 	public void onCreateContextMenu(ContextMenu menu, View v, ContextMenu.ContextMenuInfo menuInfo) {
 		menu.clear();
 

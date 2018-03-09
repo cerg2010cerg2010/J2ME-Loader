@@ -1,6 +1,6 @@
 /*
  * Copyright 2012 Kulikov Dmitriy
- * Copyright 2017 Nikita Shakarun
+ * Copyright 2017-2018 Nikita Shakarun
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,6 +19,7 @@ package javax.microedition.lcdui.pointer;
 import android.content.Context;
 import android.graphics.PointF;
 import android.graphics.RectF;
+import android.util.Log;
 import android.widget.Toast;
 
 import java.io.DataInputStream;
@@ -26,6 +27,7 @@ import java.io.DataOutputStream;
 import java.io.IOException;
 
 import javax.microedition.lcdui.Canvas;
+import javax.microedition.lcdui.Display;
 import javax.microedition.lcdui.Font;
 import javax.microedition.lcdui.Graphics;
 import javax.microedition.lcdui.Image;
@@ -33,10 +35,11 @@ import javax.microedition.lcdui.Overlay;
 import javax.microedition.lcdui.event.CanvasEvent;
 import javax.microedition.util.ContextHolder;
 
-import ua.naiksoftware.j2meloader.R;
+import ru.playsoftware.j2meloader.R;
 
 public class VirtualKeyboard implements Overlay, Runnable {
 
+	private static String TAG = VirtualKeyboard.class.getName();
 	private static final String ARROW_LEFT = "\u2190";
 	private static final String ARROW_UP = "\u2191";
 	private static final String ARROW_RIGHT = "\u2192";
@@ -51,13 +54,13 @@ public class VirtualKeyboard implements Overlay, Runnable {
 		private RectF rect;
 		private int keyCode, secondKeyCode;
 		private String label;
-		private boolean isSelected;
-		private boolean isVisible;
+		private boolean selected;
+		private boolean visible;
 
 		public VirtualKey(int keyCode, String label) {
 			this.keyCode = keyCode;
 			this.label = label;
-			this.isVisible = true;
+			this.visible = true;
 			rect = new RectF();
 		}
 
@@ -75,15 +78,15 @@ public class VirtualKeyboard implements Overlay, Runnable {
 		}
 
 		public void setSelected(boolean flag) {
-			isSelected = flag;
+			selected = flag;
 		}
 
 		public void setVisible(boolean flag) {
-			isVisible = flag;
+			visible = flag;
 		}
 
 		public boolean isVisible() {
-			return isVisible;
+			return visible;
 		}
 
 		public RectF getRect() {
@@ -96,15 +99,15 @@ public class VirtualKeyboard implements Overlay, Runnable {
 		}
 
 		public boolean contains(float x, float y) {
-			return isVisible && rect.contains(x, y);
+			return visible && rect.contains(x, y);
 		}
 
 		public void paint(Graphics g) {
-			if (label != null && isVisible) {
-				g.setColor(colors[isSelected ? BACKGROUND_SELECTED : BACKGROUND]);
+			if (label != null && visible) {
+				g.setColor(colors[selected ? BACKGROUND_SELECTED : BACKGROUND]);
 				g.fillArc(rect, 0, 360);
 
-				g.setColor(colors[isSelected ? FOREGROUND_SELECTED : FOREGROUND]);
+				g.setColor(colors[selected ? FOREGROUND_SELECTED : FOREGROUND]);
 				g.setFont(font);
 				g.drawString(label, (int) rect.centerX(), (int) rect.centerY(), Graphics.HCENTER | Graphics.VCENTER);
 
@@ -130,6 +133,7 @@ public class VirtualKeyboard implements Overlay, Runnable {
 		}
 	}
 
+	private static final int KEYBOARD_SIZE = 25;
 	private static final int SCREEN = -1;
 
 	private static final int KEY_NUM1 = 0,
@@ -249,6 +253,8 @@ public class VirtualKeyboard implements Overlay, Runnable {
 	private Graphics offgraphics;
 	private boolean obscuresVirtualScreen;
 	private boolean offscreenChanged;
+	private boolean feedback;
+	private static final int FEEDBACK_DURATION = 50;
 
 	private boolean visible, hiding, skip;
 	private final Object waiter = new Object();
@@ -280,7 +286,7 @@ public class VirtualKeyboard implements Overlay, Runnable {
 	public VirtualKeyboard() {
 		context = ContextHolder.getContext();
 		font = new Font();
-		keypad = new VirtualKey[25];
+		keypad = new VirtualKey[KEYBOARD_SIZE];
 		associatedKeys = new VirtualKey[10]; // у среднестатистического пользователя обычно не более 10 пальцев...
 
 		for (int i = KEY_NUM1; i < 9; i++) {
@@ -360,6 +366,12 @@ public class VirtualKeyboard implements Overlay, Runnable {
 				setSnap(KEY_NUM3, KEY_NUM2, RectSnap.EXT_EAST);
 				setSnap(KEY_DIAL, KEY_NUM1, RectSnap.EXT_NORTH);
 				setSnap(KEY_CANCEL, KEY_NUM3, RectSnap.EXT_NORTH);
+
+				for (int i = KEY_NUM1; i < 12; i++) {
+					keypad[i].setVisible(true);
+				}
+				keypad[KEY_DIAL].setVisible(true);
+				keypad[KEY_CANCEL].setVisible(true);
 				break;
 			case 1:
 				keyScales[SCALE_JOYSTICK] = 1;
@@ -389,7 +401,7 @@ public class VirtualKeyboard implements Overlay, Runnable {
 		}
 	}
 
-	public void switchLayout(){
+	public void switchLayout() {
 		layoutVariant ^= 1;
 		resetLayout(layoutVariant);
 		for (int group = 0; group < keyScaleGroups.length; group++) {
@@ -397,6 +409,7 @@ public class VirtualKeyboard implements Overlay, Runnable {
 		}
 		snapKeys();
 		repaint();
+		listener.layoutChanged(this);
 	}
 
 	public void writeLayout(DataOutputStream dos) throws IOException {
@@ -497,6 +510,29 @@ public class VirtualKeyboard implements Overlay, Runnable {
 		}
 	}
 
+	public String[] getKeyNames() {
+		String[] names = new String[KEYBOARD_SIZE];
+		for (int i = 0; i < KEYBOARD_SIZE; i++) {
+			names[i] = keypad[i].getLabel();
+		}
+		return names;
+	}
+
+	public boolean[] getKeyVisibility() {
+		boolean[] states = new boolean[KEYBOARD_SIZE];
+		for (int i = 0; i < KEYBOARD_SIZE; i++) {
+			states[i] = !keypad[i].isVisible();
+		}
+		return states;
+	}
+
+	public void setKeyVisibility(int id, boolean hidden) {
+		keypad[id].setVisible(!hidden);
+		repaint();
+		listener.layoutChanged(this);
+	}
+
+	@Override
 	public void setTarget(Canvas canvas) {
 		target = canvas;
 		repeater.setTarget(canvas);
@@ -530,12 +566,12 @@ public class VirtualKeyboard implements Overlay, Runnable {
 
 	private void snapKey(int key, int level) {
 		if (level >= snapStack.length) {
-			System.out.print("Snap loop detected: ");
+			Log.d(TAG, "Snap loop detected: ");
 			for (int i = 1; i < snapStack.length; i++) {
 				System.out.print(snapStack[i]);
 				System.out.print(", ");
 			}
-			System.out.print(key);
+			Log.d(TAG, String.valueOf(key));
 			return;
 		}
 		snapStack[level] = key;
@@ -616,6 +652,7 @@ public class VirtualKeyboard implements Overlay, Runnable {
 		}
 	}
 
+	@Override
 	public void resize(RectF screen, RectF virtualScreen) {
 		this.screen = screen;
 		this.virtualScreen = virtualScreen;
@@ -637,33 +674,25 @@ public class VirtualKeyboard implements Overlay, Runnable {
 			resizeKeyGroup(group);
 		}
 		snapKeys();
+		repaint();
 	}
 
+	@Override
 	public void paint(Graphics g) {
 		if (visible) {
-			if (obscuresVirtualScreen && overlayAlpha <= 250) {
-				if (offscreenChanged) {
-					offgraphics.clear(0);
-					for (VirtualKey aKeypad : keypad) {
-						aKeypad.paint(offgraphics);
-					}
-					offscreenChanged = false;
-				}
-				g.drawImage(offscreen, 0, 0, -1, -1, false, overlayAlpha);
-			} else {
+			if (offscreenChanged) {
+				offgraphics.clear(0);
 				for (VirtualKey aKeypad : keypad) {
-					aKeypad.paint(g);
+					aKeypad.paint(offgraphics);
 				}
+				offscreenChanged = false;
 			}
+			g.drawImage(offscreen, 0, 0, -1, -1, false, overlayAlpha);
 		}
 	}
 
 	private void repaint() {
 		offscreenChanged = true;
-
-		if (target != null) {
-			//target.repaint();
-		}
 	}
 
 	/**
@@ -681,133 +710,145 @@ public class VirtualKeyboard implements Overlay, Runnable {
 		return !virtualScreen.contains(x, y);
 	}
 
+	@Override
 	public boolean pointerPressed(int pointer, float x, float y) {
 		if (skip) {
 			return checkPointerHandled(x, y);
 		}
 
-		if (layoutEditMode == LAYOUT_EOF) {
-			if (pointer > associatedKeys.length) {
-				return checkPointerHandled(x, y);
-			}
-			for (VirtualKey aKeypad : keypad) {
-				if (aKeypad.contains(x, y)) {
-					associatedKeys[pointer] = aKeypad;
-					aKeypad.setSelected(true);
-					target.postEvent(CanvasEvent.getInstance(target, CanvasEvent.KEY_PRESSED, aKeypad.getKeyCode()));
-					if (aKeypad.getSecondKeyCode() != 0) {
-						target.postEvent(CanvasEvent.getInstance(target, CanvasEvent.KEY_PRESSED, aKeypad.getSecondKeyCode()));
+		switch (layoutEditMode) {
+			case LAYOUT_EOF:
+				if (pointer > associatedKeys.length) {
+					return checkPointerHandled(x, y);
+				}
+				for (VirtualKey aKeypad : keypad) {
+					if (aKeypad.contains(x, y)) {
+						vibrate();
+						associatedKeys[pointer] = aKeypad;
+						aKeypad.setSelected(true);
+						target.postEvent(CanvasEvent.getInstance(target, CanvasEvent.KEY_PRESSED, aKeypad.getKeyCode()));
+						if (aKeypad.getSecondKeyCode() != 0) {
+							target.postEvent(CanvasEvent.getInstance(target, CanvasEvent.KEY_PRESSED, aKeypad.getSecondKeyCode()));
+						}
+						repeater.start(aKeypad.getKeyCode(), aKeypad.getSecondKeyCode());
+						repaint();
+						break;
 					}
-					repeater.start(aKeypad.getKeyCode(), aKeypad.getSecondKeyCode());
+				}
+				break;
+			case LAYOUT_KEYS:
+				editedIndex = -1;
+				for (int i = 0; i < keypad.length; i++) {
+					if (keypad[i].contains(x, y)) {
+						editedIndex = i;
+						RectF rect = keypad[i].getRect();
+						offsetX = x - rect.left;
+						offsetY = y - rect.top;
+						break;
+					}
+				}
+				break;
+			case LAYOUT_SCALES:
+				int index = -1;
+				for (int group = 0; group < keyScaleGroups.length && index < 0; group++) {
+					for (int key = 0; key < keyScaleGroups[group].length && index < 0; key++) {
+						if (keypad[keyScaleGroups[group][key]].contains(x, y)) {
+							index = group;
+						}
+					}
+				}
+				if (index >= 0) {
+					editedIndex = index;
+					highlightGroup(index);
 					repaint();
-					break;
 				}
-			}
-		} else if (layoutEditMode == LAYOUT_KEYS) {
-			editedIndex = -1;
-			for (int i = 0; i < keypad.length; i++) {
-				if (keypad[i].contains(x, y)) {
-					editedIndex = i;
-					RectF rect = keypad[i].getRect();
-					offsetX = x - rect.left;
-					offsetY = y - rect.top;
-					break;
-				}
-			}
-		} else if (layoutEditMode == LAYOUT_SCALES) {
-			int index = -1;
-			for (int group = 0; group < keyScaleGroups.length && index < 0; group++) {
-				for (int key = 0; key < keyScaleGroups[group].length && index < 0; key++) {
-					if (keypad[keyScaleGroups[group][key]].contains(x, y)) {
-						index = group;
-					}
-				}
-			}
-			if (index >= 0) {
-				editedIndex = index;
-				highlightGroup(index);
-				repaint();
-			}
-			offsetX = x;
-			offsetY = y;
-			prevScale = keyScales[editedIndex];
+				offsetX = x;
+				offsetY = y;
+				prevScale = keyScales[editedIndex];
+				break;
 		}
 		return checkPointerHandled(x, y);
 	}
 
+	@Override
 	public boolean pointerDragged(int pointer, float x, float y) {
 		if (skip) {
 			return checkPointerHandled(x, y);
 		}
-		if (layoutEditMode == LAYOUT_EOF) {
-			if (pointer > associatedKeys.length) {
-				return checkPointerHandled(x, y);
-			}
-			if (associatedKeys[pointer] == null) {
-				pointerPressed(pointer, x, y);
-			} else if (!associatedKeys[pointer].contains(x, y)) {
-				repeater.stop();
-				target.postEvent(CanvasEvent.getInstance(target, CanvasEvent.KEY_RELEASED, associatedKeys[pointer].getKeyCode()));
-				if (associatedKeys[pointer].getSecondKeyCode() != 0) {
-					target.postEvent(CanvasEvent.getInstance(target, CanvasEvent.KEY_RELEASED, associatedKeys[pointer].getSecondKeyCode()));
+		switch (layoutEditMode) {
+			case LAYOUT_EOF:
+				if (pointer > associatedKeys.length) {
+					return checkPointerHandled(x, y);
 				}
-				associatedKeys[pointer].setSelected(false);
-				associatedKeys[pointer] = null;
-				repaint();
-				pointerPressed(pointer, x, y);
-			}
-		} else if (layoutEditMode == LAYOUT_KEYS) {
-			if (editedIndex >= 0) {
-				RectF rect = keypad[editedIndex].getRect();
-				rect.offsetTo(x - offsetX, y - offsetY);
-				snapModes[editedIndex] = RectSnap.NO_SNAP;
-				for (int i = 0; i < keypad.length; i++) {
-					if (i != editedIndex && findSnap(editedIndex, i)) {
-						break;
+				if (associatedKeys[pointer] == null) {
+					pointerPressed(pointer, x, y);
+				} else if (!associatedKeys[pointer].contains(x, y)) {
+					repeater.stop();
+					target.postEvent(CanvasEvent.getInstance(target, CanvasEvent.KEY_RELEASED, associatedKeys[pointer].getKeyCode()));
+					if (associatedKeys[pointer].getSecondKeyCode() != 0) {
+						target.postEvent(CanvasEvent.getInstance(target, CanvasEvent.KEY_RELEASED, associatedKeys[pointer].getSecondKeyCode()));
+					}
+					associatedKeys[pointer].setSelected(false);
+					associatedKeys[pointer] = null;
+					repaint();
+					pointerPressed(pointer, x, y);
+				}
+				break;
+			case LAYOUT_KEYS:
+				if (editedIndex >= 0) {
+					RectF rect = keypad[editedIndex].getRect();
+					rect.offsetTo(x - offsetX, y - offsetY);
+					snapModes[editedIndex] = RectSnap.NO_SNAP;
+					for (int i = 0; i < keypad.length; i++) {
+						if (i != editedIndex && findSnap(editedIndex, i)) {
+							break;
+						}
+					}
+					if (snapModes[editedIndex] == RectSnap.NO_SNAP) {
+						snapModes[editedIndex] = RectSnap.getSnap(rect, screen, snapOffsets[editedIndex]);
+						snapOrigins[editedIndex] = SCREEN;
+						if (Math.abs(snapOffsets[editedIndex].x) <= snapRadius) {
+							snapOffsets[editedIndex].x = 0;
+						}
+						if (Math.abs(snapOffsets[editedIndex].y) <= snapRadius) {
+							snapOffsets[editedIndex].y = 0;
+						}
+					}
+					snapKey(editedIndex, 0);
+					snapKeys();
+					repaint();
+				}
+				break;
+			case LAYOUT_SCALES:
+				float dx = x - offsetX;
+				float dy = offsetY - y;
+				float delta;
+				if (Math.abs(dx) > Math.abs(dy)) {
+					delta = dx;
+				} else {
+					delta = dy;
+				}
+				float scale = prevScale + delta / Math.max(screen.width(), screen.height());
+				if (Math.abs(1 - scale) <= SCALE_SNAP_RADIUS) {
+					scale = 1;
+				} else {
+					for (int i = 0; i < keyScales.length; i++) {
+						if (i != editedIndex && Math.abs(keyScales[i] - scale) <= SCALE_SNAP_RADIUS) {
+							scale = keyScales[i];
+							break;
+						}
 					}
 				}
-				if (snapModes[editedIndex] == RectSnap.NO_SNAP) {
-					snapModes[editedIndex] = RectSnap.getSnap(rect, screen, snapOffsets[editedIndex]);
-					snapOrigins[editedIndex] = SCREEN;
-					if (Math.abs(snapOffsets[editedIndex].x) <= snapRadius) {
-						snapOffsets[editedIndex].x = 0;
-					}
-					if (Math.abs(snapOffsets[editedIndex].y) <= snapRadius) {
-						snapOffsets[editedIndex].y = 0;
-					}
-				}
-				snapKey(editedIndex, 0);
+				keyScales[editedIndex] = scale;
+				resizeKeyGroup(editedIndex);
 				snapKeys();
 				repaint();
-			}
-		} else if (layoutEditMode == LAYOUT_SCALES) {
-			float dx = x - offsetX;
-			float dy = offsetY - y;
-			float delta;
-			if (Math.abs(dx) > Math.abs(dy)) {
-				delta = dx;
-			} else {
-				delta = dy;
-			}
-			float scale = prevScale + delta / Math.max(screen.width(), screen.height());
-			if (Math.abs(1 - scale) <= SCALE_SNAP_RADIUS) {
-				scale = 1;
-			} else {
-				for (int i = 0; i < keyScales.length; i++) {
-					if (i != editedIndex && Math.abs(keyScales[i] - scale) <= SCALE_SNAP_RADIUS) {
-						scale = keyScales[i];
-						break;
-					}
-				}
-			}
-			keyScales[editedIndex] = scale;
-			resizeKeyGroup(editedIndex);
-			snapKeys();
-			repaint();
+				break;
 		}
 		return checkPointerHandled(x, y);
 	}
 
+	@Override
 	public boolean pointerReleased(int pointer, float x, float y) {
 		if (skip) {
 			skip = false;
@@ -833,6 +874,7 @@ public class VirtualKeyboard implements Overlay, Runnable {
 		return checkPointerHandled(x, y);
 	}
 
+	@Override
 	public void show() {
 		synchronized (waiter) {
 			if (hiding) {
@@ -843,6 +885,7 @@ public class VirtualKeyboard implements Overlay, Runnable {
 		repaint();
 	}
 
+	@Override
 	public void hide() {
 		if (delay >= 0 && obscuresVirtualScreen) {
 			synchronized (waiter) {
@@ -851,6 +894,7 @@ public class VirtualKeyboard implements Overlay, Runnable {
 		}
 	}
 
+	@Override
 	public void run() {
 		try {
 			while (true) {
@@ -868,6 +912,7 @@ public class VirtualKeyboard implements Overlay, Runnable {
 					skip = true;
 					repaint();
 				} catch (InterruptedException ie) {
+					ie.printStackTrace();
 				}
 			}
 		} catch (InterruptedException ie) {
@@ -875,6 +920,7 @@ public class VirtualKeyboard implements Overlay, Runnable {
 		}
 	}
 
+	@Override
 	public boolean keyPressed(int keyCode) {
 		for (VirtualKey aKeypad : keypad) {
 			if (aKeypad.getKeyCode() == keyCode && aKeypad.getSecondKeyCode() == 0) {
@@ -884,10 +930,12 @@ public class VirtualKeyboard implements Overlay, Runnable {
 		return false;
 	}
 
+	@Override
 	public boolean keyRepeated(int keyCode) {
 		return false;
 	}
 
+	@Override
 	public boolean keyReleased(int keyCode) {
 		for (VirtualKey aKeypad : keypad) {
 			if (aKeypad.getKeyCode() == keyCode && aKeypad.getSecondKeyCode() == 0) {
@@ -897,35 +945,23 @@ public class VirtualKeyboard implements Overlay, Runnable {
 		return false;
 	}
 
-	public Font getFont() {
-		return font;
-	}
-
-	public void setFont(Font font) {
-		this.font = font;
-	}
-
-	public int getHideDelay() {
-		return delay;
+	private void vibrate() {
+		if (feedback) Display.getDisplay(null).vibrate(FEEDBACK_DURATION);
 	}
 
 	public void setHideDelay(int delay) {
 		this.delay = delay;
 	}
 
-	public int getOverlayAlpha() {
-		return overlayAlpha;
-	}
-
 	public void setOverlayAlpha(int overlayAlpha) {
 		this.overlayAlpha = overlayAlpha;
 	}
 
-	public int getColor(int color) {
-		return colors[color];
-	}
-
 	public void setColor(int color, int value) {
 		colors[color] = value;
+	}
+
+	public void setHasHapticFeedback(boolean feedback) {
+		this.feedback = feedback;
 	}
 }

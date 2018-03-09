@@ -1,8 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
-<PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
+<android.support.v7.preference.PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android">
     <SwitchPreferenceCompat
-        android:title="@string/pref_enable_actionbar_title"
-        android:summary="@string/pref_enable_actionbar_summary"
+        android:defaultValue="false"
         android:key="pref_actionbar_switch"
-        android:defaultValue="false" />
-</PreferenceScreen>
+        android:summary="@string/pref_enable_actionbar_summary"
+        android:title="@string/pref_enable_actionbar_title" />
+    <ListPreference
+        android:defaultValue="name"
+        android:entries="@array/pref_app_sort_entries"
+        android:entryValues="@array/pref_app_sort_values"
+        android:key="pref_app_sort"
+        android:title="@string/pref_app_sort_title" />
+    <Preference
+        android:title="@string/pref_map_keys">
+        <intent
+            android:action="android.intent.action.VIEW"
+            android:targetPackage="ru.playsoftware.j2meloader"
+            android:targetClass="ru.playsoftware.j2meloader.settings.KeyMapperActivity" />
+    </Preference>
+</android.support.v7.preference.PreferenceScreen>

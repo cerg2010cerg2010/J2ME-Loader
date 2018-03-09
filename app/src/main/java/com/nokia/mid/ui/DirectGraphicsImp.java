@@ -28,11 +28,14 @@
 
 package com.nokia.mid.ui;
 
+import android.util.Log;
+
 import javax.microedition.lcdui.Graphics;
 import javax.microedition.lcdui.Image;
 import javax.microedition.lcdui.game.Sprite;
 
 public class DirectGraphicsImp implements DirectGraphics {
+	private static String TAG = DirectGraphicsImp.class.getName();
 	private Graphics graphics;
 	private int alphaComponent;
 
@@ -50,6 +53,7 @@ public class DirectGraphicsImp implements DirectGraphics {
 	 * @param anchor
 	 * @param manipulation ignored, since manipulations are not supported at the moment
 	 */
+	@Override
 	public void drawImage(Image img, int x, int y, int anchor, int manipulation) {
 		if (img == null) {
 			throw new NullPointerException();
@@ -66,6 +70,7 @@ public class DirectGraphicsImp implements DirectGraphics {
 	/**
 	 * @param argb
 	 */
+	@Override
 	public void setARGBColor(int argb) {
 		alphaComponent = (argb >> 24 & 0xff);
 		graphics.setColorAlpha(argb);
@@ -74,6 +79,7 @@ public class DirectGraphicsImp implements DirectGraphics {
 	/**
 	 * @return
 	 */
+	@Override
 	public int getAlphaComponent() {
 		return alphaComponent;
 	}
@@ -81,8 +87,9 @@ public class DirectGraphicsImp implements DirectGraphics {
 	/**
 	 * @return
 	 */
+	@Override
 	public int getNativePixelFormat() {
-		return TYPE_BYTE_1_GRAY;
+		return TYPE_INT_8888_ARGB;
 	}
 
 	/**
@@ -93,6 +100,7 @@ public class DirectGraphicsImp implements DirectGraphics {
 	 * @param nPoints
 	 * @param argbColor
 	 */
+	@Override
 	public void drawPolygon(int xPoints[], int xOffset, int yPoints[], int yOffset, int nPoints, int argbColor) {
 		setARGBColor(argbColor);
 		graphics.drawPolygon(xPoints, xOffset, yPoints, yOffset, nPoints);
@@ -107,6 +115,7 @@ public class DirectGraphicsImp implements DirectGraphics {
 	 * @param y3
 	 * @param argbColor
 	 */
+	@Override
 	public void drawTriangle(int x1, int y1, int x2, int y2, int x3, int y3, int argbColor) {
 		drawPolygon(new int[]{x1, x2, x3}, 0, new int[]{y1, y2, y3}, 0, 3, argbColor);
 	}
@@ -119,6 +128,7 @@ public class DirectGraphicsImp implements DirectGraphics {
 	 * @param nPoints
 	 * @param argbColor
 	 */
+	@Override
 	public void fillPolygon(int xPoints[], int xOffset, int yPoints[], int yOffset, int nPoints, int argbColor) {
 		setARGBColor(argbColor);
 		graphics.fillPolygon(xPoints, xOffset, yPoints, yOffset, nPoints);
@@ -133,11 +143,10 @@ public class DirectGraphicsImp implements DirectGraphics {
 	 * @param y3
 	 * @param argbColor
 	 */
+	@Override
 	public void fillTriangle(int x1, int y1, int x2, int y2, int x3, int y3, int argbColor) {
 		fillPolygon(new int[]{x1, x2, x3}, 0, new int[]{y1, y2, y3}, 0, 3, argbColor);
 	}
-
-	//manipulations are not supported!
 
 	/**
 	 * @param pix
@@ -151,8 +160,8 @@ public class DirectGraphicsImp implements DirectGraphics {
 	 * @param manipulation ignored, since manipulations are not supported at the moment
 	 * @param format
 	 */
+	@Override
 	public void drawPixels(byte[] pix, byte[] alpha, int off, int scanlen, int x, int y, int width, int height, int manipulation, int format) {
-		System.out.println("public void drawPixels(byte[] pix, byte[] alpha, int off, int scanlen, int x, int y, int width, int height, int manipulation, int format)");
 		if (pix == null) {
 			throw new NullPointerException();
 		}
@@ -160,49 +169,49 @@ public class DirectGraphicsImp implements DirectGraphics {
 			throw new IllegalArgumentException();
 		}
 
-		Graphics g = graphics;
-		int c;
-
-		if (format == TYPE_BYTE_1_GRAY) {
-
-			int b = 7;
-			for (int yj = 0; yj < height; yj++) {
-				int line = off + yj * scanlen;
-				int ypos = yj * width;
-				for (int xj = 0; xj < width; xj++) {
-					c = doAlpha(pix, alpha, (line + xj) / 8, b);
-					if (!isTransparent(c)) { //alpha
-						g.setColorAlpha(c);
-						g.drawLine(xj + x, yj + y, xj + x, yj + y);
-					}
-					b--;
-					if (b < 0) b = 7;
-				}
-			}
-		} else if (format == TYPE_BYTE_1_GRAY_VERTICAL) {
-			int ods = off / scanlen;
-			int oms = off % scanlen;
-			int b = 0;
-			for (int yj = 0; yj < height; yj++) {
-				int ypos = yj * width;
-				int tmp = (ods + yj) / 8 * scanlen + oms;
-				for (int xj = 0; xj < width; xj++) {
-					c = doAlpha(pix, alpha, tmp + xj, b);
-					if (!isTransparent(c)) { //alpha
-						g.setColorAlpha(c);
-						g.drawLine(xj + x, yj + y, xj + x, yj + y);
+		switch (format) {
+			case TYPE_BYTE_1_GRAY: {
+				int b = 7;
+				for (int yj = 0; yj < height; yj++) {
+					int line = off + yj * scanlen;
+					int ypos = yj * width;
+					for (int xj = 0; xj < width; xj++) {
+						int c = doAlpha(pix, alpha, (line + xj) / 8, b);
+						if (!isTransparent(c)) { //alpha
+							graphics.setColorAlpha(c);
+							graphics.drawLine(xj + x, yj + y, xj + x, yj + y);
+						}
+						b--;
+						if (b < 0) b = 7;
 					}
 				}
-				b++;
-				if (b > 7) b = 0;
+				break;
 			}
-		} else
-			throw new IllegalArgumentException();
+			case TYPE_BYTE_1_GRAY_VERTICAL: {
+				int ods = off / scanlen;
+				int oms = off % scanlen;
+				int b = 0;
+				for (int yj = 0; yj < height; yj++) {
+					int ypos = yj * width;
+					int tmp = (ods + yj) / 8 * scanlen + oms;
+					for (int xj = 0; xj < width; xj++) {
+						int c = doAlpha(pix, alpha, tmp + xj, b);
+						if (!isTransparent(c)) { //alpha
+							graphics.setColorAlpha(c);
+							graphics.drawLine(xj + x, yj + y, xj + x, yj + y);
+						}
+					}
+					b++;
+					if (b > 7) b = 0;
+				}
+				break;
+			}
+			default:
+				throw new IllegalArgumentException();
+		}
 	}
 
 	/**
-	 * Only TYPE_USHORT_4444_ARGB format supported
-	 *
 	 * @param pix
 	 * @param trans
 	 * @param off
@@ -214,27 +223,29 @@ public class DirectGraphicsImp implements DirectGraphics {
 	 * @param manipulation
 	 * @param format
 	 */
+	@Override
 	public void drawPixels(short pix[], boolean trans, int off, int scanlen, int x, int y, int width, int height, int manipulation, int format) {
 		if (format != TYPE_USHORT_4444_ARGB && format != TYPE_USHORT_444_RGB) {
 			throw new IllegalArgumentException("Illegal format: " + format);
 		}
 
-		Graphics g = graphics;
+		int transform = getTransformation(manipulation);
+		int[] pixres = new int[height * width];
 
 		for (int iy = 0; iy < height; iy++) {
 			for (int ix = 0; ix < width; ix++) {
 				int c = toARGB(pix[off + ix + iy * scanlen], format);
-				if (!isTransparent(c)) {
-					g.setColorAlpha(c);
-					g.drawLine(x + ix, y + iy, x + ix, y + iy);
+				if (format == TYPE_USHORT_444_RGB) {
+					c |= (0xFF << 24);
 				}
+				pixres[iy * width + ix] = c;
 			}
 		}
+		Image image = Image.createRGBImage(pixres, width, height, true);
+		graphics.drawRegion(image, 0, 0, width, height, transform, x, y, 0);
 	}
 
 	/**
-	 * Not supported
-	 *
 	 * @param pix
 	 * @param trans
 	 * @param off
@@ -246,22 +257,26 @@ public class DirectGraphicsImp implements DirectGraphics {
 	 * @param manipulation
 	 * @param format
 	 */
+	@Override
 	public void drawPixels(int pix[], boolean trans, int off, int scanlen, int x, int y, int width, int height, int manipulation, int format) {
 		if (format != TYPE_INT_888_RGB && format != TYPE_INT_8888_ARGB) {
 			throw new IllegalArgumentException("Illegal format: " + format);
 		}
 
-		Graphics g = graphics;
+		int transform = getTransformation(manipulation);
+		int[] pixres = new int[height * width];
 
 		for (int iy = 0; iy < height; iy++) {
 			for (int ix = 0; ix < width; ix++) {
 				int c = pix[off + ix + iy * scanlen];
-				if (!isTransparent(c)) {
-					g.setColorAlpha(c);
-					g.drawLine(x + ix, y + iy, x + ix, y + iy);
+				if (format == TYPE_INT_888_RGB) {
+					c |= (0xFF << 24);
 				}
+				pixres[iy * width + ix] = c;
 			}
 		}
+		Image image = Image.createRGBImage(pixres, width, height, true);
+		graphics.drawRegion(image, 0, 0, width, height, transform, x, y, 0);
 	}
 
 	/**
@@ -275,13 +290,13 @@ public class DirectGraphicsImp implements DirectGraphics {
 	 * @param height
 	 * @param format
 	 */
-	public void getPixels(byte pix[], byte alpha[], int offset, int scanlen, int x, int y, int width, int height, int format) {
-		System.out.println("public void getPixels(byte pix[], byte alpha[], int offset, int scanlen, int x, int y, int width, int height, int format)");
+	@Override
+	public void getPixels(byte pix[], byte alpha[], int offset, int scanlen, int x, int y, int width, int height,
+						  int format) {
+		Log.e(TAG, "public void getPixels(byte pix[], byte alpha[], int offset, int scanlen, int x, int y, int width, int height, int format)");
 	}
 
 	/**
-	 * Only TYPE_USHORT_4444_ARGB format supported
-	 *
 	 * @param pix
 	 * @param offset
 	 * @param scanlen
@@ -291,8 +306,9 @@ public class DirectGraphicsImp implements DirectGraphics {
 	 * @param height
 	 * @param format
 	 */
+	@Override
 	public void getPixels(short pix[], int offset, int scanlen, int x, int y, int width, int height, int format) {
-		System.out.println("public void getPixels(short pix[], int offset, int scanlen, int x, int y, int width, int height, int format)");
+		Log.e(TAG, "public void getPixels(short pix[], int offset, int scanlen, int x, int y, int width, int height, int format)");
 	}
 
 	/**
@@ -305,8 +321,9 @@ public class DirectGraphicsImp implements DirectGraphics {
 	 * @param height
 	 * @param format
 	 */
+	@Override
 	public void getPixels(int pix[], int offset, int scanlen, int x, int y, int width, int height, int format) {
-		System.out.println("public void getPixels(int pix[], int offset, int scanlen, int x, int y, int width, int height, int format");
+		Log.e(TAG, "public void getPixels(int pix[], int offset, int scanlen, int x, int y, int width, int height, int format");
 	}
 
 	private static int doAlpha(byte[] pix, byte[] alpha, int pos, int shift) {
@@ -380,13 +397,13 @@ public class DirectGraphicsImp implements DirectGraphics {
 				// horizontal flipping
 				switch (rotation) {
 					case 0:
-						ret = Sprite.TRANS_MIRROR_ROT180;
+						ret = Sprite.TRANS_MIRROR;
 						break;
 					case ROTATE_90:
 						ret = Sprite.TRANS_MIRROR_ROT90;
 						break;
 					case ROTATE_180:
-						ret = Sprite.TRANS_MIRROR;
+						ret = Sprite.TRANS_MIRROR_ROT180;
 						break;
 					case ROTATE_270:
 						ret = Sprite.TRANS_MIRROR_ROT270;
@@ -399,13 +416,13 @@ public class DirectGraphicsImp implements DirectGraphics {
 				// vertical flipping
 				switch (rotation) {
 					case 0:
-						ret = Sprite.TRANS_MIRROR;
+						ret = Sprite.TRANS_MIRROR_ROT180;
 						break;
 					case ROTATE_90:
 						ret = Sprite.TRANS_MIRROR_ROT270;
 						break;
 					case ROTATE_180:
-						ret = Sprite.TRANS_MIRROR_ROT180;
+						ret = Sprite.TRANS_MIRROR;
 						break;
 					case ROTATE_270:
 						ret = Sprite.TRANS_MIRROR_ROT90;

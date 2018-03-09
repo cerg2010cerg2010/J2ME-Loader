@@ -1,6 +1,7 @@
 /*
  *  MicroEmulator
  *  Copyright (C) 2001-2005 Bartek Teodorczyk <barteo@barteo.net>
+ *  Copyright (C) 2018 Nikita Shakarun
  *
  *  It is licensed under the following two licenses as alternatives:
  *    1. GNU Lesser General Public License (the "LGPL") version 2.1 or any newer version
@@ -37,7 +38,6 @@ import javax.microedition.rms.RecordStore;
 import javax.microedition.rms.RecordStoreException;
 import javax.microedition.rms.RecordStoreNotOpenException;
 
-
 public class RecordEnumerationImpl implements RecordEnumeration {
 	private RecordStoreImpl recordStoreImpl;
 	private RecordFilter filter;
@@ -49,20 +49,22 @@ public class RecordEnumerationImpl implements RecordEnumeration {
 
 	private RecordListener recordListener = new RecordListener() {
 
+		@Override
 		public void recordAdded(RecordStore recordStore, int recordId) {
 			rebuild();
 		}
 
+		@Override
 		public void recordChanged(RecordStore recordStore, int recordId) {
 			rebuild();
 		}
 
+		@Override
 		public void recordDeleted(RecordStore recordStore, int recordId) {
 			rebuild();
 		}
 
 	};
-
 
 	public RecordEnumerationImpl(RecordStoreImpl recordStoreImpl, RecordFilter filter, RecordComparator comparator, boolean keepUpdated) {
 		this.recordStoreImpl = recordStoreImpl;
@@ -77,12 +79,12 @@ public class RecordEnumerationImpl implements RecordEnumeration {
 		}
 	}
 
-
+	@Override
 	public int numRecords() {
 		return enumerationRecords.size();
 	}
 
-
+	@Override
 	public byte[] nextRecord()
 			throws InvalidRecordIDException, RecordStoreNotOpenException, RecordStoreException {
 		if (!recordStoreImpl.isOpen()) {
@@ -99,7 +101,7 @@ public class RecordEnumerationImpl implements RecordEnumeration {
 		return result;
 	}
 
-
+	@Override
 	public int nextRecordId()
 			throws InvalidRecordIDException {
 		if (currentRecord >= numRecords()) {
@@ -112,7 +114,7 @@ public class RecordEnumerationImpl implements RecordEnumeration {
 		return result;
 	}
 
-
+	@Override
 	public byte[] previousRecord()
 			throws InvalidRecordIDException, RecordStoreNotOpenException, RecordStoreException {
 		if (!recordStoreImpl.isOpen()) {
@@ -123,12 +125,11 @@ public class RecordEnumerationImpl implements RecordEnumeration {
 		}
 
 		currentRecord--;
-		byte[] result = ((EnumerationRecord) enumerationRecords.elementAt(currentRecord)).value;
 
-		return result;
+		return ((EnumerationRecord) enumerationRecords.elementAt(currentRecord)).value;
 	}
 
-
+	@Override
 	public int previousRecordId()
 			throws InvalidRecordIDException {
 		if (currentRecord < 0) {
@@ -136,12 +137,11 @@ public class RecordEnumerationImpl implements RecordEnumeration {
 		}
 
 		currentRecord--;
-		int result = ((EnumerationRecord) enumerationRecords.elementAt(currentRecord)).recordId;
 
-		return result;
+		return ((EnumerationRecord) enumerationRecords.elementAt(currentRecord)).recordId;
 	}
 
-
+	@Override
 	public boolean hasNextElement() {
 		if (currentRecord == numRecords()) {
 			return false;
@@ -150,24 +150,19 @@ public class RecordEnumerationImpl implements RecordEnumeration {
 		}
 	}
 
-
+	@Override
 	public boolean hasPreviousElement() {
-		if (currentRecord == 0) {
-			return false;
-		} else {
-			return true;
-		}
+		return currentRecord != 0;
 	}
 
-
+	@Override
 	public void reset() {
 		currentRecord = 0;
 	}
 
-
+	@Override
 	public void rebuild() {
 		enumerationRecords.removeAllElements();
-
 		//
 		// filter
 		//
@@ -185,6 +180,7 @@ public class RecordEnumerationImpl implements RecordEnumeration {
 						}
 						enumerationRecords.add(new EnumerationRecord(recordId, data));
 					} catch (InvalidRecordIDException e) {
+						e.printStackTrace();
 					}
 					recordId++;
 				}
@@ -197,26 +193,20 @@ public class RecordEnumerationImpl implements RecordEnumeration {
 		// sort
 		//
 		if (comparator != null) {
-			Collections.sort(enumerationRecords, new Comparator() {
-
-				public int compare(Object lhs, Object rhs) {
-
-					int compare = comparator.compare(((EnumerationRecord) lhs).value,
-							((EnumerationRecord) rhs).value);
-					if (compare == RecordComparator.EQUIVALENT)
-						return 0;
-					else if (compare == RecordComparator.FOLLOWS)
-						return 1;
-					else
-						return -1;
-
-				}
-
+			Collections.sort(enumerationRecords, (Comparator) (lhs, rhs) -> {
+				int compare = comparator.compare(((EnumerationRecord) lhs).value,
+						((EnumerationRecord) rhs).value);
+				if (compare == RecordComparator.EQUIVALENT)
+					return 0;
+				else if (compare == RecordComparator.FOLLOWS)
+					return 1;
+				else
+					return -1;
 			});
 		}
 	}
 
-
+	@Override
 	public void keepUpdated(boolean keepUpdated) {
 		if (keepUpdated) {
 			if (!this.keepUpdated) {
@@ -230,26 +220,22 @@ public class RecordEnumerationImpl implements RecordEnumeration {
 		this.keepUpdated = keepUpdated;
 	}
 
-
+	@Override
 	public boolean isKeptUpdated() {
 		return keepUpdated;
 	}
 
-
+	@Override
 	public void destroy() {
 	}
 
-
 	class EnumerationRecord {
 		int recordId;
-
 		byte[] value;
-
 
 		EnumerationRecord(int recordId, byte[] value) {
 			this.recordId = recordId;
 			this.value = value;
 		}
 	}
-
 }

@@ -1,8 +1,26 @@
+/*
+ * Copyright (c) 2003 Nokia Corporation and/or its subsidiary(-ies).
+ * All rights reserved.
+ * This component and the accompanying materials are made available
+ * under the terms of "Eclipse Public License v1.0"
+ * which accompanies this distribution, and is available
+ * at the URL "http://www.eclipse.org/legal/epl-v10.html".
+ *
+ * Initial Contributors:
+ * Nokia Corporation - initial contribution.
+ *
+ * Contributors:
+ *
+ * Description:
+ *
+ */
+
 package javax.microedition.m3g;
 
-import javax.microedition.khronos.opengles.GL10;
-
 public class CompositingMode extends Object3D {
+	//------------------------------------------------------------------
+	// Static data
+	//------------------------------------------------------------------
 
 	public static final int ALPHA = 64;
 	public static final int ALPHA_ADD = 65;
@@ -10,153 +28,117 @@ public class CompositingMode extends Object3D {
 	public static final int MODULATE_X2 = 67;
 	public static final int REPLACE = 68;
 
-	/* Attributes set to default values */
-	private boolean depthTestEnabled = true;
-	private boolean depthWriteEnabled = true;
-	private boolean colorWriteEnabled = true;
-	private boolean alphaWriteEnabled = true;
-	private int blending = REPLACE;
-	private float alphaThreshold = 0.0f;
-	private float depthOffsetFactor = 0.0f;
-	private float depthOffsetUnits = 0.0f;
+	//------------------------------------------------------------------
+	// Constructors
+	//------------------------------------------------------------------
 
 	public CompositingMode() {
+		super(_ctor(Interface.getHandle()));
 	}
 
-	Object3D duplicateImpl() {
-		CompositingMode copy = new CompositingMode();
-		copy.depthTestEnabled = depthTestEnabled;
-		copy.depthWriteEnabled = depthWriteEnabled;
-		copy.colorWriteEnabled = colorWriteEnabled;
-		copy.alphaWriteEnabled = alphaWriteEnabled;
-		copy.blending = blending;
-		copy.alphaThreshold = alphaThreshold;
-		copy.depthOffsetFactor = depthOffsetFactor;
-		copy.depthOffsetUnits = depthOffsetUnits;
-		return copy;
+	/**
+	 */
+	CompositingMode(int handle) {
+		super(handle);
 	}
 
-	public void setDepthTestEnable(boolean depthTestEnabled) {
-		this.depthTestEnabled = depthTestEnabled;
-	}
+	//------------------------------------------------------------------
+	// Public methods
+	//------------------------------------------------------------------
 
-	public boolean isDepthTestEnabled() {
-		return depthTestEnabled;
-	}
-
-	public void setDepthWriteEnable(boolean depthWriteEnabled) {
-		this.depthWriteEnabled = depthWriteEnabled;
-	}
-
-	public boolean isDepthWriteEnabled() {
-		return depthWriteEnabled;
-	}
-
-	public void setColorWriteEnable(boolean colorWriteEnabled) {
-		this.colorWriteEnabled = colorWriteEnabled;
-	}
-
-	public boolean isColorWriteEnabled() {
-		return colorWriteEnabled;
-	}
-
-	public void setAlphaWriteEnable(boolean alphaWriteEnabled) {
-		this.alphaWriteEnabled = alphaWriteEnabled;
-	}
-
-	public boolean isAlphaWriteEnabled() {
-		return alphaWriteEnabled;
-	}
-
-	public void setBlending(int blending) {
-		switch (blending) {
-			case ALPHA:
-			case ALPHA_ADD:
-			case MODULATE:
-			case MODULATE_X2:
-			case REPLACE:
-				this.blending = blending;
-				break;
-			default:
-				throw new IllegalArgumentException("Blending is not specified constant");
-		}
+	public void setBlending(int mode) {
+		_setBlending(handle, mode);
 	}
 
 	public int getBlending() {
-		return blending;
+		return _getBlending(handle);
 	}
 
-	public void setAlphaThreshold(float alphaThreshold) {
-		this.alphaThreshold = alphaThreshold;
+	public void setAlphaThreshold(float threshold) {
+		_setAlphaThreshold(handle, threshold);
 	}
 
 	public float getAlphaThreshold() {
-		return alphaThreshold;
+		return _getAlphaThreshold(handle);
 	}
 
-	public void setDepthOffsetFactor(float depthOffsetFactor) {
-		this.depthOffsetFactor = depthOffsetFactor;
+	public void setAlphaWriteEnable(boolean enable) {
+		_setAlphaWriteEnable(handle, enable);
+	}
+
+	public boolean isAlphaWriteEnabled() {
+		return _isAlphaWriteEnabled(handle);
+	}
+
+	public void setColorWriteEnable(boolean enable) {
+		_enableColorWrite(handle, enable);
+	}
+
+	public boolean isColorWriteEnabled() {
+		return _isColorWriteEnabled(handle);
+	}
+
+	public void setDepthWriteEnable(boolean enable) {
+		_enableDepthWrite(handle, enable);
+	}
+
+	public boolean isDepthWriteEnabled() {
+		return _isDepthWriteEnabled(handle);
+	}
+
+	public void setDepthTestEnable(boolean enable) {
+		_enableDepthTest(handle, enable);
+	}
+
+	public boolean isDepthTestEnabled() {
+		return _isDepthTestEnabled(handle);
+	}
+
+	public void setDepthOffset(float factor, float units) {
+		_setDepthOffset(handle, factor, units);
 	}
 
 	public float getDepthOffsetFactor() {
-		return depthOffsetFactor;
-	}
-
-	public void setDepthOffsetUnits(float depthOffsetUnits) {
-		this.depthOffsetUnits = depthOffsetUnits;
+		return _getDepthOffsetFactor(handle);
 	}
 
 	public float getDepthOffsetUnits() {
-		return depthOffsetUnits;
+		return _getDepthOffsetUnits(handle);
 	}
 
-	public void setDepthOffset(float depthOffsetFactor, float depthOffsetUnits) {
-		this.depthOffsetFactor = depthOffsetFactor;
-		this.depthOffsetUnits = depthOffsetUnits;
-	}
+	//------------------------------------------------------------------
+	// Private methods
+	//------------------------------------------------------------------
 
-	void setupGL(GL10 gl) {
-		gl.glDepthFunc(depthTestEnabled ? GL10.GL_LEQUAL : GL10.GL_ALWAYS);
+	private native static int _ctor(int hInterface);
 
-		// Setup depth and color writes
-		gl.glDepthMask(depthWriteEnabled);
-		gl.glColorMask(colorWriteEnabled, colorWriteEnabled, colorWriteEnabled, alphaWriteEnabled);
+	private native static void _setBlending(int handle, int mode);
 
-		// Setup alpha testing
-		if (alphaThreshold == 0.0f)
-			gl.glDisable(GL10.GL_ALPHA_TEST);
-		else {
-			gl.glAlphaFunc(GL10.GL_GEQUAL, alphaThreshold);
-			gl.glEnable(GL10.GL_ALPHA_TEST);
-		}
+	private native static int _getBlending(int handle);
 
-		// Setup blending
-		if (blending != REPLACE) {
-			switch (blending) {
-				case ALPHA:
-					gl.glBlendFunc(GL10.GL_SRC_ALPHA, GL10.GL_ONE_MINUS_SRC_ALPHA);
-					break;
-				case ALPHA_ADD:
-					gl.glBlendFunc(GL10.GL_SRC_ALPHA, GL10.GL_ONE);
-					break;
-				case MODULATE:
-					gl.glBlendFunc(GL10.GL_ZERO, GL10.GL_SRC_COLOR);
-					break;
-				case MODULATE_X2:
-					gl.glBlendFunc(GL10.GL_DST_COLOR, GL10.GL_SRC_COLOR);
-					break;
-				default:
-					gl.glBlendFunc(GL10.GL_ONE, GL10.GL_ZERO);
-			}
-			gl.glEnable(GL10.GL_BLEND);
-		} else
-			gl.glDisable(GL10.GL_BLEND);
+	private native static void _setAlphaThreshold(int handle, float threshold);
 
-		// Setup depth offset
-		gl.glPolygonOffset(depthOffsetFactor, depthOffsetUnits);
-		if (depthOffsetFactor != 0 || depthOffsetUnits != 0)
-			gl.glEnable(GL10.GL_POLYGON_OFFSET_FILL);
-		else
-			gl.glDisable(GL10.GL_POLYGON_OFFSET_FILL);
-	}
+	private native static float _getAlphaThreshold(int handle);
+
+	private native static void _setAlphaWriteEnable(int handle, boolean enable);
+
+	private native static boolean _isAlphaWriteEnabled(int handle);
+
+	private native static void _enableDepthTest(int handle, boolean enable);
+
+	private native static boolean _isDepthTestEnabled(int handle);
+
+	private native static void _enableDepthWrite(int handle, boolean enable);
+
+	private native static boolean _isDepthWriteEnabled(int handle);
+
+	private native static void _enableColorWrite(int handle, boolean enable);
+
+	private native static boolean _isColorWriteEnabled(int handle);
+
+	private native static void _setDepthOffset(int handle, float factor, float units);
+
+	private native static float _getDepthOffsetFactor(int handle);
+
+	private native static float _getDepthOffsetUnits(int handle);
 }

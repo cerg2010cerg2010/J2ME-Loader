@@ -24,6 +24,8 @@ import android.view.View;
 import android.widget.EditText;
 import android.widget.ScrollView;
 
+import javax.microedition.lcdui.event.SimpleEvent;
+
 public class TextBox extends Screen {
 	private ScrollView scrollview;
 
@@ -31,6 +33,13 @@ public class TextBox extends Screen {
 	private EditText textview;
 	private int maxSize;
 	private int constraints;
+
+	private SimpleEvent msgSetText = new SimpleEvent() {
+		@Override
+		public void process() {
+			textview.setText(text);
+		}
+	};
 
 	public TextBox(String title, String text, int maxSize, int constraints) {
 		setTitle(title);
@@ -47,20 +56,14 @@ public class TextBox extends Screen {
 		this.text = text;
 
 		if (textview != null) {
-			textview.setText(text);
+			ViewHandler.postEvent(msgSetText);
 		}
 	}
 
 	public void insert(String src, int pos) {
-		if (text != null && text.length() > maxSize) {
-			throw new IllegalArgumentException("text length exceeds max size");
-		}
-
 		this.text = new StringBuilder(getString()).insert(pos, src).toString();
 
-		if (textview != null) {
-			textview.setText(text);
-		}
+		setString(text);
 	}
 
 	public String getString() {
@@ -97,12 +100,12 @@ public class TextBox extends Screen {
 		this.constraints = constraints;
 
 		if (textview != null) {
-			int inputtype = 0;
+			int inputtype;
 
 			switch (constraints & TextField.CONSTRAINT_MASK) {
 				default:
 				case TextField.ANY:
-					inputtype = InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_NORMAL;
+					inputtype = InputType.TYPE_CLASS_TEXT;
 					break;
 
 				case TextField.EMAILADDR:
@@ -148,6 +151,10 @@ public class TextBox extends Screen {
 			}
 
 			textview.setInputType(inputtype);
+			if ((constraints & TextField.CONSTRAINT_MASK) == TextField.ANY) {
+				textview.setSingleLine(false);
+				textview.setMaxLines(5);
+			}
 		}
 	}
 
@@ -155,14 +162,15 @@ public class TextBox extends Screen {
 		return constraints;
 	}
 
+	public void setInitialInputMode(String characterSubset) {
+	}
+
+	@Override
 	public View getScreenView() {
 		if (scrollview == null) {
 			Context context = getParentActivity();
 
 			textview = new EditText(context);
-
-			// textview.setBackgroundDrawable(Item.createBackground(context));
-			// textview.setTextColor(context.getResources().getColor(android.R.color.white));
 
 			setMaxSize(maxSize);
 			setConstraints(constraints);
@@ -175,6 +183,7 @@ public class TextBox extends Screen {
 		return scrollview;
 	}
 
+	@Override
 	public void clearScreenView() {
 		scrollview = null;
 		textview = null;

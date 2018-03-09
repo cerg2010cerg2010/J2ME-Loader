@@ -1,6 +1,6 @@
 /*
  * Copyright 2012 Kulikov Dmitriy
- * Copyright 2017 Nikita Shakarun
+ * Copyright 2017-2018 Nikita Shakarun
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,25 +25,27 @@ import java.util.ArrayList;
 import java.util.HashMap;
 
 import javax.microedition.amms.control.audioeffect.EqualizerControl;
+import javax.microedition.media.control.MIDIControl;
 import javax.microedition.media.control.MetaDataControl;
 import javax.microedition.media.control.PanControl;
+import javax.microedition.media.control.ToneControl;
 import javax.microedition.media.control.VolumeControl;
 import javax.microedition.media.protocol.DataSource;
 
-public class MicroPlayer implements Player, MediaPlayer.OnPreparedListener, MediaPlayer.OnCompletionListener, MediaPlayer.OnErrorListener, VolumeControl, PanControl {
+public class MicroPlayer implements Player, MediaPlayer.OnPreparedListener, MediaPlayer.OnCompletionListener,
+		MediaPlayer.OnErrorListener, VolumeControl, PanControl {
 	protected DataSource source;
-	protected MediaPlayer player;
 	protected int state;
-	protected int loopCount;
+	private MediaPlayer player;
+	private int loopCount;
 
-	protected ArrayList<PlayerListener> listeners;
-	protected HashMap<String, Control> controls;
+	private ArrayList<PlayerListener> listeners;
+	private HashMap<String, Control> controls;
 
-	protected boolean mute;
-	protected int level, pan;
+	private boolean mute;
+	private int level, pan;
 
-	protected InternalMetaData metadata;
-	protected InternalEqualizer equalizer;
+	private InternalMetaData metadata;
 
 	public MicroPlayer() {
 		this(null);
@@ -65,15 +67,19 @@ public class MicroPlayer implements Player, MediaPlayer.OnPreparedListener, Medi
 		loopCount = 1;
 
 		metadata = new InternalMetaData();
-		equalizer = new InternalEqualizer();
+		InternalEqualizer equalizer = new InternalEqualizer();
+		InternalMIDIControl midiControl = new InternalMIDIControl();
+		InternalToneControl toneControl = new InternalToneControl();
 
-		listeners = new ArrayList();
-		controls = new HashMap();
+		listeners = new ArrayList<>();
+		controls = new HashMap<>();
 
-		controls.put(VolumeControl.class.getSimpleName(), this);
-		controls.put(PanControl.class.getSimpleName(), this);
-		controls.put(MetaDataControl.class.getSimpleName(), metadata);
-		controls.put(EqualizerControl.class.getSimpleName(), equalizer);
+		controls.put(VolumeControl.class.getName(), this);
+		controls.put(PanControl.class.getName(), this);
+		controls.put(MetaDataControl.class.getName(), metadata);
+		controls.put(EqualizerControl.class.getName(), equalizer);
+		controls.put(MIDIControl.class.getName(), midiControl);
+		controls.put(ToneControl.class.getName(), toneControl);
 	}
 
 	public void setDataSource(DataSource datasource) throws IOException {
@@ -90,20 +96,27 @@ public class MicroPlayer implements Player, MediaPlayer.OnPreparedListener, Medi
 		return player;
 	}
 
+	@Override
 	public Control getControl(String controlType) {
+		if (!controlType.contains(".")) {
+			controlType = "javax.microedition.media.control." + controlType;
+		}
 		return controls.get(controlType);
 	}
 
+	@Override
 	public Control[] getControls() {
 		return controls.values().toArray(new Control[0]);
 	}
 
+	@Override
 	public void addPlayerListener(PlayerListener playerListener) {
 		if (!listeners.contains(playerListener)) {
 			listeners.add(playerListener);
 		}
 	}
 
+	@Override
 	public void removePlayerListener(PlayerListener playerListener) {
 		listeners.remove(playerListener);
 	}
@@ -114,14 +127,14 @@ public class MicroPlayer implements Player, MediaPlayer.OnPreparedListener, Medi
 		}
 	}
 
+	@Override
 	public void onPrepared(MediaPlayer mp) {
 		// state = PREFETCHED;
 	}
 
+	@Override
 	public synchronized void onCompletion(MediaPlayer mp) {
 		postEvent(PlayerListener.END_OF_MEDIA);
-
-		player.seekTo(0);
 
 		if (loopCount == 1) {
 			state = PREFETCHED;
@@ -135,11 +148,12 @@ public class MicroPlayer implements Player, MediaPlayer.OnPreparedListener, Medi
 		}
 	}
 
+	@Override
 	public boolean onError(MediaPlayer mp, int what, int extra) {
-//		System.out.println("Error in MP " + source.getURL() + ": " + what + ", " + extra);
 		return true;
 	}
 
+	@Override
 	public void realize() throws MediaException {
 		checkClosed();
 
@@ -169,6 +183,7 @@ public class MicroPlayer implements Player, MediaPlayer.OnPreparedListener, Medi
 		}
 	}
 
+	@Override
 	public void prefetch() throws MediaException {
 		checkClosed();
 
@@ -186,6 +201,7 @@ public class MicroPlayer implements Player, MediaPlayer.OnPreparedListener, Medi
 		}
 	}
 
+	@Override
 	public synchronized void start() throws MediaException {
 		prefetch();
 
@@ -197,6 +213,7 @@ public class MicroPlayer implements Player, MediaPlayer.OnPreparedListener, Medi
 		}
 	}
 
+	@Override
 	public synchronized void stop() {
 		if (state == STARTED) {
 			player.pause();
@@ -206,6 +223,7 @@ public class MicroPlayer implements Player, MediaPlayer.OnPreparedListener, Medi
 		}
 	}
 
+	@Override
 	public void deallocate() {
 		checkClosed();
 
@@ -217,6 +235,7 @@ public class MicroPlayer implements Player, MediaPlayer.OnPreparedListener, Medi
 		}
 	}
 
+	@Override
 	public void close() {
 		stop();
 
@@ -252,6 +271,7 @@ public class MicroPlayer implements Player, MediaPlayer.OnPreparedListener, Medi
 		}
 	}
 
+	@Override
 	public long setMediaTime(long now) throws MediaException {
 		checkRealized();
 
@@ -262,16 +282,19 @@ public class MicroPlayer implements Player, MediaPlayer.OnPreparedListener, Medi
 		return getMediaTime();
 	}
 
+	@Override
 	public long getMediaTime() {
 		checkClosed();
 		return player.getCurrentPosition() * 1000;
 	}
 
+	@Override
 	public long getDuration() {
 		checkClosed();
 		return player.getDuration() * 1000;
 	}
 
+	@Override
 	public void setLoopCount(int count) {
 		checkClosed();
 		if (state == STARTED)
@@ -284,14 +307,19 @@ public class MicroPlayer implements Player, MediaPlayer.OnPreparedListener, Medi
 		loopCount = count;
 	}
 
+	@Override
 	public int getState() {
 		return state;
 	}
 
+	@Override
+	public String getContentType() {
+		return "";
+	}
 
 	// VolumeControl
 
-	protected void updateVolume() {
+	private void updateVolume() {
 		float left, right;
 
 		if (mute) {
@@ -312,15 +340,18 @@ public class MicroPlayer implements Player, MediaPlayer.OnPreparedListener, Medi
 		postEvent(PlayerListener.VOLUME_CHANGED);
 	}
 
+	@Override
 	public void setMute(boolean mute) {
 		this.mute = mute;
 		updateVolume();
 	}
 
+	@Override
 	public boolean isMuted() {
 		return mute;
 	}
 
+	@Override
 	public int setLevel(int level) {
 		if (level < 0) {
 			level = 0;
@@ -334,12 +365,15 @@ public class MicroPlayer implements Player, MediaPlayer.OnPreparedListener, Medi
 		return level;
 	}
 
+	@Override
 	public int getLevel() {
 		return level;
 	}
 
 
 	// PanControl
+
+	@Override
 	public int setPan(int pan) {
 		if (pan < -100) {
 			pan = -100;
@@ -353,12 +387,9 @@ public class MicroPlayer implements Player, MediaPlayer.OnPreparedListener, Medi
 		return pan;
 	}
 
+	@Override
 	public int getPan() {
 		return pan;
-	}
-
-	public String getContentType() {
-		return "";
 	}
 
 }

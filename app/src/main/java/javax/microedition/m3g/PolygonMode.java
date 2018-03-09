@@ -1,109 +1,134 @@
-package javax.microedition.m3g;
+/*
+ * Copyright (c) 2003 Nokia Corporation and/or its subsidiary(-ies).
+ * All rights reserved.
+ * This component and the accompanying materials are made available
+ * under the terms of "Eclipse Public License v1.0"
+ * which accompanies this distribution, and is available
+ * at the URL "http://www.eclipse.org/legal/epl-v10.html".
+ *
+ * Initial Contributors:
+ * Nokia Corporation - initial contribution.
+ *
+ * Contributors:
+ *
+ * Description:
+ *
+ */
 
-import javax.microedition.khronos.opengles.GL10;
+package javax.microedition.m3g;
 
 public class PolygonMode extends Object3D {
 
-	public static final int CULL_BACK = 160;
-	public static final int CULL_FRONT = 161;
-	public static final int CULL_NONE = 162;
-	public static final int SHADE_FLAT = 164;
-	public static final int SHADE_SMOOTH = 165;
-	public static final int WINDING_CCW = 168;
-	public static final int WINDING_CW = 169;
+	//------------------------------------------------------------------
+	// Static data
+	//------------------------------------------------------------------
 
-	private int culling = CULL_BACK;
-	private int shading = SHADE_SMOOTH;
-	private int winding = WINDING_CCW;
-	private boolean twoSidedLightingEnabled = false;
-	private boolean localCameraLightingEnabled = false;
-	private boolean perspectiveCorrectionEnabled = true;
+	public static final int CULL_BACK = 0xA0;
+	public static final int CULL_FRONT = CULL_BACK + 1;
+	public static final int CULL_NONE = CULL_FRONT + 1;
+	public static final int SHADE_FLAT = 0xA4;
+	public static final int SHADE_SMOOTH = SHADE_FLAT + 1;
+	public static final int WINDING_CCW = 0xA8;
+	public static final int WINDING_CW = WINDING_CCW + 1;
 
-	Object3D duplicateImpl() {
-		PolygonMode copy = new PolygonMode();
-		copy.culling = culling;
-		copy.shading = shading;
-		copy.winding = winding;
-		copy.twoSidedLightingEnabled = twoSidedLightingEnabled;
-		copy.localCameraLightingEnabled = localCameraLightingEnabled;
-		copy.perspectiveCorrectionEnabled = perspectiveCorrectionEnabled;
-		return copy;
+	//------------------------------------------------------------------
+	// Constructor(s)
+	//------------------------------------------------------------------
+
+	public PolygonMode() {
+		super(_ctor(Interface.getHandle()));
 	}
 
-	public void setCulling(int culling) {
-		this.culling = culling;
+	/**
+	 */
+	PolygonMode(int handle) {
+		super(handle);
+	}
+
+	//------------------------------------------------------------------
+	// Public methods
+	//------------------------------------------------------------------
+
+	public void setCulling(int mode) {
+		_setCulling(handle, mode);
 	}
 
 	public int getCulling() {
-		return culling;
+		return _getCulling(handle);
 	}
 
-	public void setShading(int shading) {
-		this.shading = shading;
-	}
-
-	public int getShading() {
-		return shading;
-	}
-
-	public void setWinding(int winding) {
-		this.winding = winding;
+	public void setWinding(int mode) {
+		_setWinding(handle, mode);
 	}
 
 	public int getWinding() {
-		return winding;
+		return _getWinding(handle);
+	}
+
+	public void setShading(int mode) {
+		_setShading(handle, mode);
+	}
+
+	public int getShading() {
+		return _getShading(handle);
 	}
 
 	public void setTwoSidedLightingEnable(boolean enable) {
-		this.twoSidedLightingEnabled = enable;
+		_setTwoSidedLightingEnable(handle, enable);
 	}
 
 	public boolean isTwoSidedLightingEnabled() {
-		return twoSidedLightingEnabled;
+		return _isTwoSidedLightingEnabled(handle);
 	}
 
 	public void setLocalCameraLightingEnable(boolean enable) {
-		this.localCameraLightingEnabled = enable;
-	}
-
-	public boolean isLocalCameraLightingEnabled() {
-		return localCameraLightingEnabled;
+		_setLocalCameraLightingEnable(handle, enable);
 	}
 
 	public void setPerspectiveCorrectionEnable(boolean enable) {
-		this.perspectiveCorrectionEnabled = enable;
+		_setPerspectiveCorrectionEnable(handle, enable);
+	}
+
+	// M3G 1.1 Maintenance release getters
+	public boolean isLocalCameraLightingEnabled() {
+		return _isLocalCameraLightingEnabled(handle);
 	}
 
 	public boolean isPerspectiveCorrectionEnabled() {
-		return perspectiveCorrectionEnabled;
+		return _isPerspectiveCorrectionEnabled(handle);
 	}
 
-	void setupGL(GL10 gl) {
-		// Setup culling
-		if (culling == CULL_NONE)
-			gl.glDisable(GL10.GL_CULL_FACE);
-		else {
-			gl.glCullFace((culling == CULL_BACK) ? GL10.GL_BACK : GL10.GL_FRONT);
-			gl.glEnable(GL10.GL_CULL_FACE);
-		}
 
-		// Setup two sided lighting
-		gl.glLightModelf(GL10.GL_LIGHT_MODEL_TWO_SIDE, twoSidedLightingEnabled ? GL10.GL_TRUE : GL10.GL_FALSE);
+	//------------------------------------------------------------------
+	// Private methods
+	//------------------------------------------------------------------
 
-		// Setup shading
-		gl.glShadeModel((shading == SHADE_FLAT) ? GL10.GL_FLAT : GL10.GL_SMOOTH);
-		
-		// Setup winding
-		gl.glFrontFace((winding == WINDING_CW) ? GL10.GL_CW : GL10.GL_CCW);
+	private native static int _ctor(int hInterface);
 
-		// Setup perspective correction
-		gl.glHint(GL10.GL_PERSPECTIVE_CORRECTION_HINT, perspectiveCorrectionEnabled ? GL10.GL_NICEST : GL10.GL_FASTEST);
-	}
+	private native static void _setLocalCameraLightingEnable(int handle, boolean enable);
 
-	int getLightTarget() {
-		if (isTwoSidedLightingEnabled())
-			return GL10.GL_FRONT_AND_BACK;
-		else
-			return GL10.GL_FRONT;
-	}
+	private native static void _setPerspectiveCorrectionEnable(int handle, boolean enable);
+
+	private native static void _setCulling(int handle, int mode);
+
+	private native static int _getCulling(int handle);
+
+	private native static void _setWinding(int handle, int mode);
+
+	private native static int _getWinding(int handle);
+
+	private native static void _setShading(int handle, int mode);
+
+	private native static int _getShading(int handle);
+
+	private native static void _setTwoSidedLightingEnable(int handle, boolean enable);
+
+	private native static boolean _isTwoSidedLightingEnabled(int handle);
+
+	// M3G 1.1 Maintenance release getters
+	private native static boolean _isLocalCameraLightingEnabled(int handle);
+
+	private native static boolean _isPerspectiveCorrectionEnabled(int handle);
+
 }
+

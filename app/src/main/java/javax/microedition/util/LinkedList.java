@@ -23,16 +23,16 @@ package javax.microedition.util;
  * @param <E> из чего он составлен
  */
 public class LinkedList<E> {
-	protected ArrayStack<LinkedEntry<E>> pool;
+	private ArrayStack<LinkedEntry<E>> pool;
 
-	protected final LinkedEntry<E> head;
-	protected final LinkedEntry<E> tail;
+	private final LinkedEntry<E> head;
+	private final LinkedEntry<E> tail;
 
 	public LinkedList() {
-		pool = new ArrayStack();
+		pool = new ArrayStack<>();
 
-		head = new LinkedEntry();
-		tail = new LinkedEntry();
+		head = new LinkedEntry<>();
+		tail = new LinkedEntry<>();
 
 		head.insertBefore(tail);
 	}
@@ -51,7 +51,7 @@ public class LinkedList<E> {
 	 */
 	public void clear() {
 		/*
-         * отсоединяем голову и хвост от предыдущего списка
+		 * отсоединяем голову и хвост от предыдущего списка
 		 */
 
 		head.remove();

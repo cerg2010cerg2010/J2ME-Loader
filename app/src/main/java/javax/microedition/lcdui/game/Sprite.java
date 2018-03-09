@@ -23,6 +23,7 @@ import android.graphics.Matrix;
 import javax.microedition.lcdui.Graphics;
 import javax.microedition.lcdui.Image;
 
+@SuppressWarnings("SuspiciousNameCombination")
 public class Sprite extends Layer {
 
 	public static final int TRANS_NONE = 0;
@@ -238,8 +239,7 @@ public class Sprite extends Layer {
 		if (l == 0)
 			throw new IllegalArgumentException();
 
-		for (int i = 0; i < l; i++) {
-			int value = sequence[i];
+		for (int value : sequence) {
 			if (value > max || value < 0)
 				throw new ArrayIndexOutOfBoundsException();
 		}
@@ -356,7 +356,8 @@ public class Sprite extends Layer {
 		}
 	}
 
-	public final void paint(Graphics g) {
+	@Override
+    public final void paint(Graphics g) {
 		if (!isVisible())
 			return;
 
@@ -918,18 +919,18 @@ public class Sprite extends Layer {
 				break;
 
 			case Sprite.TRANS_MIRROR_ROT90:
-				matrix.preScale(-1, 1, px, py);
 				matrix.preRotate(90, px, py);
+				matrix.preScale(-1, 1, px, py);
 				break;
 
 			case Sprite.TRANS_MIRROR_ROT180:
-				matrix.preScale(-1, 1, px, py);
 				matrix.preRotate(180, px, py);
+				matrix.preScale(-1, 1, px, py);
 				break;
 
 			case Sprite.TRANS_MIRROR_ROT270:
-				matrix.preScale(-1, 1, px, py);
 				matrix.preRotate(270, px, py);
+				matrix.preScale(-1, 1, px, py);
 				break;
 		}
 

@@ -1,5 +1,6 @@
 /*
  * Copyright 2012 Kulikov Dmitriy
+ * Copyright 2017-2018 Nikita Shakarun
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -31,44 +32,42 @@ import javax.microedition.lcdui.list.ItemSelector;
 public class List extends Screen implements Choice, ItemSelector {
 	public static final Command SELECT_COMMAND = new Command("", Command.SCREEN, 0);
 
-	private ArrayList<String> strings = new ArrayList();
-	private ArrayList<Image> images = new ArrayList();
-	private final ArrayList<Boolean> selected = new ArrayList();
+	private ArrayList<String> strings = new ArrayList<>();
+	private ArrayList<Image> images = new ArrayList<>();
+	private final ArrayList<Boolean> selected = new ArrayList<>();
 
 	private ListView list;
 	private CompoundListAdapter adapter;
 
 	private int listType;
 	private int selectedIndex = -1;
+	private int fitPolicy;
 
 	private Command selectCommand = SELECT_COMMAND;
 
 	private class ClickListener implements AdapterView.OnItemClickListener {
+		@Override
 		public void onItemClick(AdapterView parent, View view, int position, long id) {
 			selectedIndex = position;
-
 			switch (listType) {
 				case IMPLICIT:
 					fireCommandAction(selectCommand, List.this);
 					break;
-
 				case EXCLUSIVE:
 					if (selectedIndex >= 0 && selectedIndex < selected.size()) {
 						selected.set(selectedIndex, Boolean.FALSE);
 					}
-
 					if (position >= 0 && position < selected.size()) {
 						selected.set(position, Boolean.TRUE);
 					}
-
 					break;
-
 				case MULTIPLE:
 					if (position >= 0 && position < selected.size()) {
 						selected.set(position, !selected.get(position));
 					}
 					break;
 			}
+			adapter.notifyDataSetChanged();
 		}
 	}
 
@@ -110,11 +109,11 @@ public class List extends Screen implements Choice, ItemSelector {
 			selected.addAll(Collections.nCopies(size, Boolean.FALSE));
 
 			if (strings.size() == 0) {
-				strings.addAll(Collections.nCopies(size, (String) null));
+				strings.addAll(Collections.nCopies(size, null));
 			}
 
 			if (images.size() == 0) {
-				images.addAll(Collections.nCopies(size, (Image) null));
+				images.addAll(Collections.nCopies(size, null));
 			}
 		}
 	}
@@ -131,6 +130,7 @@ public class List extends Screen implements Choice, ItemSelector {
 		}
 	}
 
+	@Override
 	public int append(String stringPart, Image imagePart) {
 		synchronized (selected) {
 			int index = selected.size();
@@ -152,6 +152,7 @@ public class List extends Screen implements Choice, ItemSelector {
 		}
 	}
 
+	@Override
 	public void delete(int elementNum) {
 		synchronized (selected) {
 			strings.remove(elementNum);
@@ -168,6 +169,7 @@ public class List extends Screen implements Choice, ItemSelector {
 		}
 	}
 
+	@Override
 	public void deleteAll() {
 		synchronized (selected) {
 			strings.clear();
@@ -182,10 +184,12 @@ public class List extends Screen implements Choice, ItemSelector {
 		}
 	}
 
+	@Override
 	public Image getImage(int elementNum) {
 		return images.get(elementNum);
 	}
 
+	@Override
 	public int getSelectedFlags(boolean[] selectedArray) {
 		synchronized (selected) {
 			if (selectedArray.length < selected.size()) {
@@ -211,14 +215,17 @@ public class List extends Screen implements Choice, ItemSelector {
 		}
 	}
 
+	@Override
 	public int getSelectedIndex() {
 		return selectedIndex;
 	}
 
+	@Override
 	public String getString(int elementNum) {
 		return strings.get(elementNum);
 	}
 
+	@Override
 	public void insert(int elementNum, String stringPart, Image imagePart) {
 		synchronized (selected) {
 			boolean select = selected.size() == 0 && listType != MULTIPLE;
@@ -237,12 +244,14 @@ public class List extends Screen implements Choice, ItemSelector {
 		}
 	}
 
+	@Override
 	public boolean isSelected(int elementNum) {
 		synchronized (selected) {
 			return selected.get(elementNum);
 		}
 	}
 
+	@Override
 	public void set(int elementNum, String stringPart, Image imagePart) {
 		synchronized (selected) {
 			strings.set(elementNum, stringPart);
@@ -254,6 +263,7 @@ public class List extends Screen implements Choice, ItemSelector {
 		}
 	}
 
+	@Override
 	public void setSelectedFlags(boolean[] selectedArray) {
 		if (listType == EXCLUSIVE || listType == IMPLICIT) {
 			for (int i = 0; i < selectedArray.length; i++) {
@@ -277,6 +287,7 @@ public class List extends Screen implements Choice, ItemSelector {
 		}
 	}
 
+	@Override
 	public void setSelectedIndex(int elementNum, boolean flag) {
 		synchronized (selected) {
 			selected.set(elementNum, flag);
@@ -293,12 +304,29 @@ public class List extends Screen implements Choice, ItemSelector {
 		}
 	}
 
+	public void setFont(int elementNum, Font font) {
+	}
+
+	public Font getFont(int elementNum) {
+		return null;
+	}
+
+	public void setFitPolicy(int fitPolicy) {
+		this.fitPolicy = fitPolicy;
+	}
+
+	public int getFitPolicy() {
+		return fitPolicy;
+	}
+
+	@Override
 	public int size() {
 		synchronized (selected) {
 			return selected.size();
 		}
 	}
 
+	@Override
 	public View getScreenView() {
 		Context context = getParentActivity();
 
@@ -322,6 +350,7 @@ public class List extends Screen implements Choice, ItemSelector {
 		return list;
 	}
 
+	@Override
 	public void clearScreenView() {
 		list = null;
 		adapter = null;

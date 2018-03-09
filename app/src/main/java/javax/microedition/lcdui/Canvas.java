@@ -1,32 +1,33 @@
 /*
-* Copyright 2012 Kulikov Dmitriy
-* Copyright 2017 Nikita Shakarun
-*
-* Licensed under the Apache License, Version 2.0 (the "License");
-* you may not use this file except in compliance with the License.
-* You may obtain a copy of the License at
-*
-*     http://www.apache.org/licenses/LICENSE-2.0
-*
-* Unless required by applicable law or agreed to in writing, software
-* distributed under the License is distributed on an "AS IS" BASIS,
-* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-* See the License for the specific language governing permissions and
-* limitations under the License.
-*/
+ * Copyright 2012 Kulikov Dmitriy
+ * Copyright 2017-2018 Nikita Shakarun
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 
 package javax.microedition.lcdui;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.graphics.RectF;
+import android.support.v4.util.SparseArrayCompat;
 import android.util.Log;
+import android.util.SparseIntArray;
 import android.view.KeyEvent;
 import android.view.MotionEvent;
 import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
-
-import java.util.HashMap;
 
 import javax.microedition.lcdui.event.CanvasEvent;
 import javax.microedition.lcdui.event.Event;
@@ -69,39 +70,38 @@ public abstract class Canvas extends Displayable {
 	public static final int GAME_C = 11;
 	public static final int GAME_D = 12;
 
-	private static HashMap<Integer, Integer> androidToMIDP;
-	private static HashMap<Integer, Integer> keyCodeToGameAction;
-	private static HashMap<Integer, Integer> gameActionToKeyCode;
-	private static HashMap<Integer, String> keyCodeToKeyName;
+	private static SparseIntArray androidToMIDP;
+	private static SparseIntArray keyCodeToGameAction;
+	private static SparseIntArray gameActionToKeyCode;
+	private static SparseArrayCompat<String> keyCodeToKeyName;
 
 	static {
-		androidToMIDP = new HashMap();
-		keyCodeToGameAction = new HashMap();
-		gameActionToKeyCode = new HashMap();
-		keyCodeToKeyName = new HashMap();
+		keyCodeToGameAction = new SparseIntArray();
+		gameActionToKeyCode = new SparseIntArray();
+		keyCodeToKeyName = new SparseArrayCompat<>();
 
-		mapKeyCode(KeyEvent.KEYCODE_0, KEY_NUM0, 0, "0");
-		mapKeyCode(KeyEvent.KEYCODE_1, KEY_NUM1, 0, "1");
-		mapKeyCode(KeyEvent.KEYCODE_2, KEY_NUM2, UP, "2");
-		mapKeyCode(KeyEvent.KEYCODE_3, KEY_NUM3, 0, "3");
-		mapKeyCode(KeyEvent.KEYCODE_4, KEY_NUM4, LEFT, "4");
-		mapKeyCode(KeyEvent.KEYCODE_5, KEY_NUM5, FIRE, "5");
-		mapKeyCode(KeyEvent.KEYCODE_6, KEY_NUM6, RIGHT, "6");
-		mapKeyCode(KeyEvent.KEYCODE_7, KEY_NUM7, GAME_A, "7");
-		mapKeyCode(KeyEvent.KEYCODE_8, KEY_NUM8, DOWN, "8");
-		mapKeyCode(KeyEvent.KEYCODE_9, KEY_NUM9, GAME_B, "9");
-		mapKeyCode(KeyEvent.KEYCODE_STAR, KEY_STAR, GAME_C, "ASTERISK");
-		mapKeyCode(KeyEvent.KEYCODE_POUND, KEY_POUND, GAME_D, "POUND");
-		mapKeyCode(KeyEvent.KEYCODE_DPAD_UP, KEY_UP, UP, "UP");
-		mapKeyCode(KeyEvent.KEYCODE_DPAD_DOWN, KEY_DOWN, DOWN, "DOWN");
-		mapKeyCode(KeyEvent.KEYCODE_DPAD_LEFT, KEY_LEFT, LEFT, "LEFT");
-		mapKeyCode(KeyEvent.KEYCODE_DPAD_RIGHT, KEY_RIGHT, RIGHT, "RIGHT");
-		mapKeyCode(KeyEvent.KEYCODE_DPAD_CENTER, KEY_FIRE, FIRE, "SELECT");
-		mapKeyCode(KeyEvent.KEYCODE_SOFT_LEFT, KEY_SOFT_LEFT, LEFT, "SOFT1");
-		mapKeyCode(KeyEvent.KEYCODE_SOFT_RIGHT, KEY_SOFT_RIGHT, 0, "SOFT2");
-		mapKeyCode(KeyEvent.KEYCODE_CLEAR, KEY_CLEAR, 0, "CLEAR");
-		mapKeyCode(KeyEvent.KEYCODE_CALL, KEY_SEND, 0, "SEND");
-		mapKeyCode(KeyEvent.KEYCODE_ENDCALL, KEY_END, 0, "END");
+		mapKeyCode(KEY_NUM0, 0, "0");
+		mapKeyCode(KEY_NUM1, 0, "1");
+		mapKeyCode(KEY_NUM2, UP, "2");
+		mapKeyCode(KEY_NUM3, 0, "3");
+		mapKeyCode(KEY_NUM4, LEFT, "4");
+		mapKeyCode(KEY_NUM5, FIRE, "5");
+		mapKeyCode(KEY_NUM6, RIGHT, "6");
+		mapKeyCode(KEY_NUM7, GAME_A, "7");
+		mapKeyCode(KEY_NUM8, DOWN, "8");
+		mapKeyCode(KEY_NUM9, GAME_B, "9");
+		mapKeyCode(KEY_STAR, GAME_C, "ASTERISK");
+		mapKeyCode(KEY_POUND, GAME_D, "POUND");
+		mapKeyCode(KEY_UP, UP, "UP");
+		mapKeyCode(KEY_DOWN, DOWN, "DOWN");
+		mapKeyCode(KEY_LEFT, LEFT, "LEFT");
+		mapKeyCode(KEY_RIGHT, RIGHT, "RIGHT");
+		mapKeyCode(KEY_FIRE, FIRE, "SELECT");
+		mapKeyCode(KEY_SOFT_LEFT, 0, "SOFT1");
+		mapKeyCode(KEY_SOFT_RIGHT, 0, "SOFT2");
+		mapKeyCode(KEY_CLEAR, 0, "CLEAR");
+		mapKeyCode(KEY_SEND, 0, "SEND");
+		mapKeyCode(KEY_END, 0, "END");
 
 		mapGameAction(UP, KEY_UP, "UP");
 		mapGameAction(LEFT, KEY_LEFT, "LEFT");
@@ -114,8 +114,7 @@ public abstract class Canvas extends Displayable {
 		mapGameAction(GAME_D, KEY_POUND, "POUND");
 	}
 
-	private static void mapKeyCode(int androidKeyCode, int midpKeyCode, int gameAction, String keyName) {
-		androidToMIDP.put(androidKeyCode, midpKeyCode);
+	private static void mapKeyCode(int midpKeyCode, int gameAction, String keyName) {
 		keyCodeToGameAction.put(midpKeyCode, gameAction);
 		keyCodeToKeyName.put(midpKeyCode, keyName);
 	}
@@ -126,17 +125,12 @@ public abstract class Canvas extends Displayable {
 	}
 
 	private static int convertAndroidKeyCode(int keyCode) {
-		Integer res = androidToMIDP.get(keyCode);
-		if (res != null) {
-			return res;
-		} else {
-			return -(keyCode << 8);
-		}
+		return androidToMIDP.get(keyCode, -(keyCode << 8));
 	}
 
 	public int getKeyCode(int gameAction) {
-		Integer res = gameActionToKeyCode.get(gameAction);
-		if (res != null) {
+		int res = gameActionToKeyCode.get(gameAction, Integer.MAX_VALUE);
+		if (res != Integer.MAX_VALUE) {
 			return res;
 		} else {
 			throw new IllegalArgumentException("unknown game action " + gameAction);
@@ -144,12 +138,7 @@ public abstract class Canvas extends Displayable {
 	}
 
 	public int getGameAction(int keyCode) {
-		Integer res = keyCodeToGameAction.get(keyCode);
-		if (res != null) {
-			return res;
-		} else {
-			return 0;
-		}
+		return keyCodeToGameAction.get(keyCode, 0);
 	}
 
 	public String getKeyName(int keyCode) {
@@ -164,28 +153,32 @@ public abstract class Canvas extends Displayable {
 			setFocusableInTouchMode(true);
 		}
 
+		@Override
 		public boolean onKeyDown(int keyCode, KeyEvent event) {
 			keyCode = convertAndroidKeyCode(keyCode);
 			if (event.getRepeatCount() == 0) {
-				if (overlay == null) {
+				if (overlay == null || !overlay.keyPressed(keyCode)) {
 					postEvent(CanvasEvent.getInstance(Canvas.this, CanvasEvent.KEY_PRESSED, keyCode));
 				}
 			} else {
-				if (overlay == null) {
+				if (overlay == null || !overlay.keyRepeated(keyCode)) {
 					postEvent(CanvasEvent.getInstance(Canvas.this, CanvasEvent.KEY_REPEATED, keyCode));
 				}
 			}
 			return super.onKeyDown(keyCode, event);
 		}
 
+		@Override
 		public boolean onKeyUp(int keyCode, KeyEvent event) {
 			keyCode = convertAndroidKeyCode(keyCode);
-			if (overlay == null) {
+			if (overlay == null || !overlay.keyReleased(keyCode)) {
 				postEvent(CanvasEvent.getInstance(Canvas.this, CanvasEvent.KEY_RELEASED, keyCode));
 			}
 			return super.onKeyUp(keyCode, event);
 		}
 
+		@Override
+		@SuppressLint("ClickableViewAccessibility")
 		public boolean onTouchEvent(MotionEvent event) {
 			switch (event.getActionMasked()) {
 				case MotionEvent.ACTION_DOWN:
@@ -194,8 +187,9 @@ public abstract class Canvas extends Displayable {
 					}
 				case MotionEvent.ACTION_POINTER_DOWN:
 					int index = event.getActionIndex();
-					if (overlay == null || !overlay.pointerPressed(index, event.getX(index), event.getY(index))) {
-						postEvent(CanvasEvent.getInstance(Canvas.this, CanvasEvent.POINTER_PRESSED, index, convertPointerX(event.getX()), convertPointerY(event.getY())));
+					if ((overlay == null || !overlay.pointerPressed(index, event.getX(index), event.getY(index))) && touchInput) {
+						postEvent(CanvasEvent.getInstance(Canvas.this, CanvasEvent.POINTER_PRESSED, index,
+								convertPointerX(event.getX()), convertPointerY(event.getY())));
 					}
 					break;
 				case MotionEvent.ACTION_MOVE:
@@ -203,14 +197,16 @@ public abstract class Canvas extends Displayable {
 					int historySize = event.getHistorySize();
 					for (int h = 0; h < historySize; h++) {
 						for (int p = 0; p < pointerCount; p++) {
-							if (overlay == null || !overlay.pointerDragged(p, event.getHistoricalX(p, h), event.getHistoricalY(p, h))) {
-								postEvent(CanvasEvent.getInstance(Canvas.this, CanvasEvent.POINTER_DRAGGED, p, convertPointerX(event.getHistoricalX(p, h)), convertPointerY(event.getHistoricalY(p, h))));
+							if ((overlay == null || !overlay.pointerDragged(p, event.getHistoricalX(p, h), event.getHistoricalY(p, h))) && touchInput) {
+								postEvent(CanvasEvent.getInstance(Canvas.this, CanvasEvent.POINTER_DRAGGED, p,
+										convertPointerX(event.getHistoricalX(p, h)), convertPointerY(event.getHistoricalY(p, h))));
 							}
 						}
 					}
 					for (int p = 0; p < pointerCount; p++) {
-						if (overlay == null || !overlay.pointerDragged(p, event.getX(p), event.getY(p))) {
-							postEvent(CanvasEvent.getInstance(Canvas.this, CanvasEvent.POINTER_DRAGGED, p, convertPointerX(event.getX(p)), convertPointerY(event.getY(p))));
+						if ((overlay == null || !overlay.pointerDragged(p, event.getX(p), event.getY(p))) && touchInput) {
+							postEvent(CanvasEvent.getInstance(Canvas.this, CanvasEvent.POINTER_DRAGGED, p,
+									convertPointerX(event.getX(p)), convertPointerY(event.getY(p))));
 						}
 					}
 					break;
@@ -220,8 +216,9 @@ public abstract class Canvas extends Displayable {
 					}
 				case MotionEvent.ACTION_POINTER_UP:
 					index = event.getActionIndex();
-					if (overlay == null || !overlay.pointerReleased(index, event.getX(index), event.getY(index))) {
-						postEvent(CanvasEvent.getInstance(Canvas.this, CanvasEvent.POINTER_RELEASED, index, convertPointerX(event.getX()), convertPointerY(event.getY())));
+					if ((overlay == null || !overlay.pointerReleased(index, event.getX(index), event.getY(index))) && touchInput) {
+						postEvent(CanvasEvent.getInstance(Canvas.this, CanvasEvent.POINTER_RELEASED, index,
+								convertPointerX(event.getX()), convertPointerY(event.getY())));
 					}
 					break;
 				default:
@@ -235,40 +232,39 @@ public abstract class Canvas extends Displayable {
 			synchronized (paintsync) {
 				displayWidth = newwidth;
 				displayHeight = newheight;
-				updateSize(true);
+				updateSize();
+				postEvent(CanvasEvent.getInstance(Canvas.this, CanvasEvent.SIZE_CHANGED, width, height));
 			}
 			postEvent(paintEvent);
 		}
 
 		@Override
 		public void surfaceCreated(SurfaceHolder holder) {
+			surfaceCreated = true;
 			synchronized (paintsync) {
-				surfacevalid = true;
 				postEvent(CanvasEvent.getInstance(Canvas.this, CanvasEvent.SHOW_NOTIFY));
 			}
 		}
 
 		@Override
 		public void surfaceDestroyed(SurfaceHolder holder) {
+			surfaceCreated = false;
 			synchronized (paintsync) {
-				surfacevalid = false;
 				postEvent(CanvasEvent.getInstance(Canvas.this, CanvasEvent.HIDE_NOTIFY));
 			}
 		}
 	}
 
 	private class PaintEvent extends Event implements EventFilter {
+		@Override
 		public void process() {
 			synchronized (paintsync) {
-				if (!surfacevalid || holder == null) {
+				if (holder == null || !holder.getSurface().isValid() || !surfaceCreated) {
 					return;
 				}
 				graphics.setCanvas(offscreen.getCanvas());
-				if (clearBuffer) {
-					graphics.setColor(0);
-					graphics.setClip(0, 0, width, height);
-					graphics.fillRect(0, 0, width, height);
-				}
+				graphics.resetTranslation();
+				graphics.resetClip();
 				try {
 					paint(graphics);
 				} catch (Throwable t) {
@@ -288,15 +284,18 @@ public abstract class Canvas extends Displayable {
 			}
 		}
 
+		@Override
 		public void recycle() {
 		}
 
 		private int enqueued = 0;
 
+		@Override
 		public void enterQueue() {
 			enqueued++;
 		}
 
+		@Override
 		public void leaveQueue() {
 			enqueued--;
 		}
@@ -307,10 +306,12 @@ public abstract class Canvas extends Displayable {
 		 * Одна не обеспечит плавности, а если делать больше двух,
 		 * то как определить, насколько именно больше двух их нужно сделать?
 		 */
+		@Override
 		public boolean placeableAfter(Event event) {
 			return enqueued < 2;
 		}
 
+		@Override
 		public boolean accept(Event event) {
 			return event == this;
 		}
@@ -319,8 +320,7 @@ public abstract class Canvas extends Displayable {
 	private final Object paintsync = new Object();
 
 	private PaintEvent paintEvent = new PaintEvent();
-
-	private boolean surfacevalid = false;
+	private boolean surfaceCreated = false;
 
 	private InnerView view;
 	private SurfaceHolder holder;
@@ -337,7 +337,7 @@ public abstract class Canvas extends Displayable {
 	private static boolean scaleToFit;
 	private static boolean keepAspectRatio;
 	private static boolean filter;
-	protected static boolean clearBuffer;
+	private static boolean touchInput;
 	private static int backgroundColor;
 	private static int scaleRatio;
 
@@ -351,7 +351,7 @@ public abstract class Canvas extends Displayable {
 		displayHeight = ContextHolder.getDisplayHeight();
 		Log.d("Canvas", "Constructor. w=" + displayWidth + " h=" + displayHeight);
 
-		updateSize(false);
+		updateSize();
 	}
 
 	public static void setVirtualSize(int virtualWidth, int virtualHeight, boolean scaleToFit, boolean keepAspectRatio, int scaleRatio) {
@@ -371,8 +371,12 @@ public abstract class Canvas extends Displayable {
 		Canvas.filter = filter;
 	}
 
-	public static void setClearBuffer(boolean clearBuffer) {
-		Canvas.clearBuffer = clearBuffer;
+	public static void setKeyMapping(SparseIntArray intArray) {
+		Canvas.androidToMIDP = intArray;
+	}
+
+	public static void setHasTouchInput(boolean touchInput) {
+		Canvas.touchInput = touchInput;
 	}
 
 	public void setOverlay(Overlay ov) {
@@ -387,14 +391,12 @@ public abstract class Canvas extends Displayable {
 
 	/**
 	 * Обновить размер и положение виртуального экрана относительно реального.
-	 *
-	 * @param post следует ли оповещать об этих изменениях сам холст и картинку двойной буферизации
 	 */
-	private void updateSize(boolean post) {
+	private void updateSize() {
 		/*
-         * Превращаем размеры виртуального экрана
+		 * Превращаем размеры виртуального экрана
 		 * в размеры видимого для мидлета холста.
-		 * 
+		 *
 		 * При этом учитываем, что один или оба виртуальных размера могут быть
 		 * меньше нуля, что означает автоподбор этого размера так,
 		 * чтобы получившийся холст имел то же соотношение сторон,
@@ -488,15 +490,8 @@ public abstract class Canvas extends Displayable {
 		RectF screen = new RectF(0, 0, displayWidth, displayHeight);
 		RectF virtualScreen = new RectF(onX, onY, onX + onWidth, onY + onHeight);
 
-		if (post) {
-			/*
-			 * проверяем, нужно ли создавать новую картинку для двойной буферизации,
-			 * или сгодится старая
-			 */
-			if (offscreen == null || offscreen.getWidth() != width || offscreen.getHeight() != height) {
-				offscreen = Image.createImage(width, height);
-			}
-			postEvent(CanvasEvent.getInstance(this, CanvasEvent.SIZE_CHANGED, width, height));
+		if (offscreen == null || offscreen.getWidth() != width || offscreen.getHeight() != height) {
+			offscreen = Image.createImage(width, height);
 		}
 		if (overlay != null) {
 			overlay.resize(screen, virtualScreen);
@@ -523,6 +518,7 @@ public abstract class Canvas extends Displayable {
 		return (y - onY) * virtualHeight / onHeight;
 	}
 
+	@Override
 	public View getDisplayableView() {
 		if (view == null) {
 			view = new InnerView(getParentActivity());
@@ -531,6 +527,7 @@ public abstract class Canvas extends Displayable {
 		return view;
 	}
 
+	@Override
 	public void clearDisplayableView() {
 		synchronized (paintsync) {
 			view = null;
@@ -542,11 +539,11 @@ public abstract class Canvas extends Displayable {
 	}
 
 	public boolean hasPointerEvents() {
-		return overlay == null;
+		return touchInput;
 	}
 
 	public boolean hasPointerMotionEvents() {
-		return overlay == null;
+		return touchInput;
 	}
 
 	public boolean hasRepeatEvents() {
@@ -557,10 +554,12 @@ public abstract class Canvas extends Displayable {
 		return true;
 	}
 
+	@Override
 	public int getWidth() {
 		return width;
 	}
 
+	@Override
 	public int getHeight() {
 		return height;
 	}
@@ -568,11 +567,29 @@ public abstract class Canvas extends Displayable {
 	public abstract void paint(Graphics g);
 
 	public void repaint() {
-		getEventQueue().postEvent(paintEvent);
+		repaint(0, 0, width, height);
 	}
 
 	public void repaint(int x, int y, int width, int height) {
-		getEventQueue().postEvent(paintEvent);
+		postEvent(paintEvent);
+	}
+
+	// GameCanvas
+	protected void flushBuffer(Image image) {
+		synchronized (paintsync) {
+			if (holder == null || !holder.getSurface().isValid() || !surfaceCreated) {
+				return;
+			}
+			graphics.setCanvas(holder.lockCanvas());
+			if (graphics.hasCanvas()) {
+				graphics.clear(backgroundColor);
+				graphics.drawImage(image, onX, onY, onWidth, onHeight, filter, 255);
+				if (overlay != null) {
+					overlay.paint(graphics);
+				}
+				holder.unlockCanvasAndPost(graphics.getCanvas());
+			}
+		}
 	}
 
 	/**
@@ -584,10 +601,10 @@ public abstract class Canvas extends Displayable {
 
 		/*
 		 * порядок блокировки:
-		 * 
+		 *
 		 * 1 - queue.this
 		 * 2 - queue.queue
-		 * 
+		 *
 		 * соответственно, внутри EventQueue порядок должен быть такой же,
 		 * иначе возможна взаимная блокировка двух потоков (все повиснет)
 		 */
@@ -596,7 +613,7 @@ public abstract class Canvas extends Displayable {
 			/*
 			 * Такая синхронизация фактически приостанавливает обработку событий
 			 * непосредственно перед изменением значения currentEvent()
-			 * 
+			 *
 			 * Тогда остается всего два варианта:
 			 */
 
@@ -609,6 +626,7 @@ public abstract class Canvas extends Displayable {
 				try {
 					queue.wait();
 				} catch (InterruptedException ie) {
+					ie.printStackTrace();
 				}
 			} else if (queue.removeEvents(paintEvent)) {
 				/*

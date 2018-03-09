@@ -34,10 +34,10 @@ import java.util.Map;
 
 /**
  * @author vlads
- *         <p>
- *         config2.xml example
- *         <p>
- *         <pre>
+ * <p>
+ * config2.xml example
+ * <p>
+ * <pre>
  *                  &lt;extensions&gt;
  *                  &lt;extension&gt;
  *                  &lt;className&gt;org.microemu.cldc.file.FileSystem&lt;/className&gt;
@@ -66,6 +66,7 @@ public class FileSystem implements ImplementationInitialization {
 	 *
 	 * @see org.microemu.microedition.ImplementationInitialization#registerImplementation()
 	 */
+	@Override
 	public void registerImplementation(Map parameters) {
 		String fsRoot = (String) parameters.get(fsRootConfigProperty);
 		String fsSingle = (String) parameters.get(fsSingleConfigProperty);
@@ -84,6 +85,7 @@ public class FileSystem implements ImplementationInitialization {
 	 *
 	 * @see org.microemu.microedition.ImplementationInitialization#notifyMIDletStart()
 	 */
+	@Override
 	public void notifyMIDletStart() {
 	}
 
@@ -92,6 +94,7 @@ public class FileSystem implements ImplementationInitialization {
 	 *
 	 * @see org.microemu.microedition.ImplementationInitialization#notifyMIDletDestroyed()
 	 */
+	@Override
 	public void notifyMIDletDestroyed() {
 		this.impl.notifyMIDletDestroyed();
 	}

@@ -84,6 +84,7 @@ public class Alert extends Screen implements Runnable, DialogInterface.OnClickLi
 		return timeout >= 0 && countCommands() < 2;
 	}
 
+	@Override
 	public void run() {
 		if (finiteTimeout()) {
 			try {
@@ -91,6 +92,7 @@ public class Alert extends Screen implements Runnable, DialogInterface.OnClickLi
 				Display display = Display.getDisplay(null);
 				display.setCurrent(display.getCurrent());
 			} catch (InterruptedException ie) {
+				ie.printStackTrace();
 			}
 		}
 	}
@@ -140,6 +142,7 @@ public class Alert extends Screen implements Runnable, DialogInterface.OnClickLi
 		return builder;
 	}
 
+	@Override
 	public View getScreenView() {
 		if (form == null) {
 			form = new Form(getTitle());
@@ -151,6 +154,7 @@ public class Alert extends Screen implements Runnable, DialogInterface.OnClickLi
 		return form.getDisplayableView();
 	}
 
+	@Override
 	public void clearScreenView() {
 		if (form != null) {
 			form.clearDisplayableView();
@@ -158,6 +162,7 @@ public class Alert extends Screen implements Runnable, DialogInterface.OnClickLi
 		}
 	}
 
+	@Override
 	public void onClick(DialogInterface dialog, int which) {
 		switch (which) {
 			case DialogInterface.BUTTON_POSITIVE:

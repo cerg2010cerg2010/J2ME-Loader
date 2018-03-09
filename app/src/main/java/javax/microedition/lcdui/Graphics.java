@@ -1,6 +1,6 @@
 /*
  * Copyright 2012 Kulikov Dmitriy
- * Copyright 2017 Nikita Shakarun
+ * Copyright 2017-2018 Nikita Shakarun
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,6 @@
 
 package javax.microedition.lcdui;
 
-import android.annotation.TargetApi;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.DashPathEffect;
@@ -62,7 +61,6 @@ public class Graphics {
 	private boolean textAntiAlias;
 
 	private Font font;
-	private char[] singleChar;
 
 	public Graphics() {
 		drawPaint = new Paint();
@@ -71,8 +69,6 @@ public class Graphics {
 
 		drawPaint.setStyle(Paint.Style.STROKE);
 		fillPaint.setStyle(Paint.Style.FILL);
-
-		imagePaint.setAlpha(255);
 
 		dpeffect = new DashPathEffect(new float[]{5, 5}, 0);
 		setStrokeStyle(SOLID);
@@ -85,7 +81,6 @@ public class Graphics {
 		intRect = new Rect();
 		floatRect = new RectF();
 		path = new Path();
-		singleChar = new char[1];
 	}
 
 	public Graphics(Canvas canvas) {
@@ -139,12 +134,8 @@ public class Graphics {
 	}
 
 	public void setColor(int r, int g, int b) {
-		setColor(255, r, g, b);
-	}
-
-	public void setColor(int a, int r, int g, int b) {
-		drawPaint.setARGB(a, r, g, b);
-		fillPaint.setARGB(a, r, g, b);
+		drawPaint.setARGB(255, r, g, b);
+		fillPaint.setARGB(255, r, g, b);
 	}
 
 	public void setGrayScale(int value) {
@@ -193,14 +184,14 @@ public class Graphics {
 		return stroke;
 	}
 
-	public void setAntiAlias(boolean aa) {
+	private void setAntiAlias(boolean aa) {
 		drawAntiAlias = aa;
 
 		drawPaint.setAntiAlias(aa);
 		fillPaint.setAntiAlias(aa);
 	}
 
-	public void setAntiAliasText(boolean aa) {
+	private void setAntiAliasText(boolean aa) {
 		textAntiAlias = aa;
 	}
 
@@ -213,7 +204,7 @@ public class Graphics {
 		return font;
 	}
 
-	public void resetClip() {
+	protected void resetClip() {
 		setClip(0, 0, canvas.getWidth(), canvas.getHeight());
 	}
 
@@ -255,7 +246,7 @@ public class Graphics {
 		canvas.translate(dx, dy);
 	}
 
-	public void resetTranslation() {
+	protected void resetTranslation() {
 		translate(-translateX, -translateY);
 	}
 
@@ -344,36 +335,11 @@ public class Graphics {
 	}
 
 	public void drawChar(char character, int x, int y, int anchor) {
-		singleChar[0] = character;
-		drawChars(singleChar, 0, 1, x, y, anchor);
+		drawChars(new char[]{character}, 0, 1, x, y, anchor);
 	}
 
 	public void drawChars(char[] data, int offset, int length, int x, int y, int anchor) {
-		if (anchor == 0) {
-			anchor = LEFT | TOP;
-		}
-
-		if ((anchor & Graphics.LEFT) != 0) {
-			drawPaint.setTextAlign(Paint.Align.LEFT);
-		} else if ((anchor & Graphics.RIGHT) != 0) {
-			drawPaint.setTextAlign(Paint.Align.RIGHT);
-		} else if ((anchor & Graphics.HCENTER) != 0) {
-			drawPaint.setTextAlign(Paint.Align.CENTER);
-		}
-
-		if ((anchor & Graphics.TOP) != 0) {
-			y -= drawPaint.ascent();
-		} else if ((anchor & Graphics.BOTTOM) != 0) {
-			y -= drawPaint.descent();
-		} else if ((anchor & Graphics.VCENTER) != 0) {
-			y -= drawPaint.ascent() + (drawPaint.descent() - drawPaint.ascent()) / 2;
-		}
-
-		drawPaint.setAntiAlias(textAntiAlias);
-		drawPaint.setStyle(Paint.Style.FILL);
-		canvas.drawText(data, offset, length, x, y, drawPaint);
-		drawPaint.setStyle(Paint.Style.STROKE);
-		drawPaint.setAntiAlias(drawAntiAlias);
+		drawString(new String(data, offset, length), x, y, anchor);
 	}
 
 	public void drawString(String text, int x, int y, int anchor) {
@@ -398,7 +364,6 @@ public class Graphics {
 		}
 
 		drawPaint.setAntiAlias(textAntiAlias);
-
 		drawPaint.setStyle(Paint.Style.FILL);
 		canvas.drawText(text, x, y, drawPaint);
 		drawPaint.setStyle(Paint.Style.STROKE);
@@ -434,27 +399,7 @@ public class Graphics {
 	}
 
 	public void drawSubstring(String str, int offset, int len, int x, int y, int anchor) {
-		int newx = x;
-		int newy = y;
-
-		if (anchor == 0) {
-			anchor = javax.microedition.lcdui.Graphics.TOP | javax.microedition.lcdui.Graphics.LEFT;
-		}
-
-		if ((anchor & javax.microedition.lcdui.Graphics.TOP) != 0) {
-			newy -= drawPaint.ascent();
-		} else if ((anchor & javax.microedition.lcdui.Graphics.BOTTOM) != 0) {
-			newy -= drawPaint.descent();
-		}
-		if ((anchor & javax.microedition.lcdui.Graphics.HCENTER) != 0) {
-			newx -= drawPaint.measureText(str) / 2;
-		} else if ((anchor & javax.microedition.lcdui.Graphics.RIGHT) != 0) {
-			newx -= drawPaint.measureText(str);
-		}
-
-		drawPaint.setStyle(Paint.Style.FILL);
-		canvas.drawText(str, offset, len + offset, newx, newy, drawPaint);
-		drawPaint.setStyle(Paint.Style.STROKE);
+		drawString(str.substring(offset, len + offset), x, y, anchor);
 	}
 
 	public void drawRegion(Image image, int srcx, int srcy, int width, int height, int transform, int dstx, int dsty, int anchor) {
@@ -471,7 +416,18 @@ public class Graphics {
 		if (rows < height) {
 			height = rows;
 		}
-		canvas.drawBitmap(rgbData, offset, scanlength, x, y, width, height, processAlpha, drawPaint);
+		int[] pixres = new int[height * width];
+		for (int iy = 0; iy < height; iy++) {
+			for (int ix = 0; ix < width; ix++) {
+				int c = rgbData[offset + ix + iy * scanlength];
+				if (!processAlpha) {
+					c |= (0xFF << 24);
+				}
+				pixres[iy * width + ix] = c;
+			}
+		}
+		Image image = Image.createRGBImage(pixres, width, height, true);
+		drawImage(image, x, y, 0);
 	}
 
 	public void copyArea(int x_src, int y_src, int width, int height,

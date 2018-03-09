@@ -1,32 +1,67 @@
 apply plugin: 'com.android.application'
 
 android {
-    compileSdkVersion 27
-    buildToolsVersion '27.0.1'
+    compileSdkVersion rootProject.ext.compileSdkVersion
+    buildToolsVersion rootProject.ext.buildToolsVersion
 
     defaultConfig {
-        applicationId "ua.naiksoftware.j2meloader"
-        minSdkVersion 14
-        targetSdkVersion 27
-        versionCode 15
-        versionName "1.2.5.1"
+        applicationId "ru.playsoftware.j2meloader"
+        minSdkVersion rootProject.ext.minSdkVersion
+        targetSdkVersion rootProject.ext.targetSdkVersion
+        versionCode 32
+        versionName "1.2.8"
         setProperty("archivesBaseName", "J2ME_Loader-$versionName")
+        ndk {
+            abiFilters 'x86', 'armeabi-v7a'
+        }
     }
+    flavorDimensions "default"
+
     buildTypes {
         release {
-            minifyEnabled false
+            minifyEnabled true
+            shrinkResources true
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
+
+    compileOptions {
+        sourceCompatibility JavaVersion.VERSION_1_8
+        targetCompatibility JavaVersion.VERSION_1_8
+    }
+
     lintOptions {
         abortOnError false
+        disable 'MissingTranslation'
+    }
+
+    productFlavors {
+        play {
+            buildConfigField "boolean", "DONATIONS_GOOGLE", "true"
+            versionNameSuffix "-play"
+        }
+        open {
+            buildConfigField "boolean", "DONATIONS_GOOGLE", "false"
+            versionNameSuffix "-open"
+        }
+    }
+
+    externalNativeBuild {
+        ndkBuild {
+            path 'src/main/cpp/Android.mk'
+        }
     }
 }
 
 dependencies {
-    implementation 'com.android.support:appcompat-v7:27.0.0'
-    implementation 'com.android.support:preference-v7:27.0.0'
+    def acraVersion = '5.1.1'
+    def supportLibVersion = '27.1.0'
+    implementation "com.android.support:appcompat-v7:$supportLibVersion"
+    implementation "com.android.support:preference-v7:$supportLibVersion"
+    implementation 'com.android.volley:volley:1.1.0'
+    implementation "ch.acra:acra-dialog:$acraVersion"
     implementation 'com.github.yukuku:ambilwarna:2.0.1'
     implementation 'org.ow2.asm:asm-tree:5.2'
-    implementation fileTree(include: ['*.jar', '*.so'], dir: 'libs')
+    implementation 'org.sufficientlysecure:donations:2.6'
+    implementation project(':dexlib')
 }

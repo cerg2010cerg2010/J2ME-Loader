@@ -1,5 +1,6 @@
 /*
  * Copyright 2012 Kulikov Dmitriy
+ * Copyright 2018 Nikita Shakarun
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -34,10 +35,10 @@ import java.util.Collections;
 import javax.microedition.lcdui.list.CompoundSpinnerAdapter;
 
 public class ChoiceGroup extends Item implements Choice {
-	private ArrayList<String> strings = new ArrayList();
-	private ArrayList<Image> images = new ArrayList();
-	private ArrayList<CompoundButton> buttons = new ArrayList();
-	private final ArrayList<Boolean> selected = new ArrayList();
+	private ArrayList<String> strings = new ArrayList<>();
+	private ArrayList<Image> images = new ArrayList<>();
+	private ArrayList<CompoundButton> buttons = new ArrayList<>();
+	private final ArrayList<Boolean> selected = new ArrayList<>();
 
 	private Spinner spinner;
 	private CompoundSpinnerAdapter adapter;
@@ -45,8 +46,10 @@ public class ChoiceGroup extends Item implements Choice {
 
 	private int choiceType;
 	private int selectedIndex = -1;
+	private int fitPolicy;
 
 	private class RadioListener implements RadioGroup.OnCheckedChangeListener {
+		@Override
 		public void onCheckedChanged(RadioGroup group, int checkedId) {
 			selectedIndex = checkedId;
 			notifyStateChanged();
@@ -54,6 +57,7 @@ public class ChoiceGroup extends Item implements Choice {
 	}
 
 	private class CheckListener implements CompoundButton.OnCheckedChangeListener {
+		@Override
 		public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
 			int index = buttonView.getId();
 
@@ -70,6 +74,7 @@ public class ChoiceGroup extends Item implements Choice {
 	}
 
 	private class SpinnerListener implements AdapterView.OnItemSelectedListener {
+		@Override
 		public void onItemSelected(AdapterView parent, View view, int position, long id) {
 			synchronized (selected) {
 				if (selectedIndex >= 0 && selectedIndex < selected.size()) {
@@ -85,6 +90,7 @@ public class ChoiceGroup extends Item implements Choice {
 			notifyStateChanged();
 		}
 
+		@Override
 		public void onNothingSelected(AdapterView parent) {
 			synchronized (selected) {
 				if (selectedIndex >= 0 && selectedIndex < selected.size()) {
@@ -113,6 +119,7 @@ public class ChoiceGroup extends Item implements Choice {
 				throw new IllegalArgumentException("choice type " + choiceType + " is not supported");
 		}
 
+		fitPolicy = Choice.TEXT_WRAP_DEFAULT;
 		setLabel(label);
 	}
 
@@ -137,15 +144,16 @@ public class ChoiceGroup extends Item implements Choice {
 			selected.addAll(Collections.nCopies(size, Boolean.FALSE));
 
 			if (strings.size() == 0) {
-				strings.addAll(Collections.nCopies(size, (String) null));
+				strings.addAll(Collections.nCopies(size, null));
 			}
 
 			if (images.size() == 0) {
-				images.addAll(Collections.nCopies(size, (Image) null));
+				images.addAll(Collections.nCopies(size, null));
 			}
 		}
 	}
 
+	@Override
 	public int append(String stringPart, Image imagePart) {
 		synchronized (selected) {
 			int index = selected.size();
@@ -173,6 +181,7 @@ public class ChoiceGroup extends Item implements Choice {
 		}
 	}
 
+	@Override
 	public void delete(int elementNum) {
 		synchronized (selected) {
 			strings.remove(elementNum);
@@ -194,6 +203,7 @@ public class ChoiceGroup extends Item implements Choice {
 		}
 	}
 
+	@Override
 	public void deleteAll() {
 		synchronized (selected) {
 			strings.clear();
@@ -211,10 +221,12 @@ public class ChoiceGroup extends Item implements Choice {
 		}
 	}
 
+	@Override
 	public Image getImage(int elementNum) {
 		return images.get(elementNum);
 	}
 
+	@Override
 	public int getSelectedFlags(boolean[] selectedArray) {
 		synchronized (selected) {
 			if (selectedArray.length < selected.size()) {
@@ -240,14 +252,17 @@ public class ChoiceGroup extends Item implements Choice {
 		}
 	}
 
+	@Override
 	public int getSelectedIndex() {
 		return selectedIndex;
 	}
 
+	@Override
 	public String getString(int elementNum) {
 		return strings.get(elementNum);
 	}
 
+	@Override
 	public void insert(int elementNum, String stringPart, Image imagePart) {
 		synchronized (selected) {
 			boolean select = selected.size() == 0 && choiceType != MULTIPLE;
@@ -272,12 +287,14 @@ public class ChoiceGroup extends Item implements Choice {
 		}
 	}
 
+	@Override
 	public boolean isSelected(int elementNum) {
 		synchronized (selected) {
 			return selected.get(elementNum);
 		}
 	}
 
+	@Override
 	public void set(int elementNum, String stringPart, Image imagePart) {
 		synchronized (selected) {
 			strings.set(elementNum, stringPart);
@@ -301,6 +318,7 @@ public class ChoiceGroup extends Item implements Choice {
 		}
 	}
 
+	@Override
 	public void setSelectedFlags(boolean[] selectedArray) {
 		if (choiceType == EXCLUSIVE || choiceType == POPUP) {
 			for (int i = 0; i < selectedArray.length; i++) {
@@ -331,6 +349,7 @@ public class ChoiceGroup extends Item implements Choice {
 		}
 	}
 
+	@Override
 	public void setSelectedIndex(int elementNum, boolean flag) {
 		synchronized (selected) {
 			selected.set(elementNum, flag);
@@ -349,12 +368,22 @@ public class ChoiceGroup extends Item implements Choice {
 		}
 	}
 
+	public void setFitPolicy(int fitPolicy) {
+		this.fitPolicy = fitPolicy;
+	}
+
+	public int getFitPolicy() {
+		return fitPolicy;
+	}
+
+	@Override
 	public int size() {
 		synchronized (selected) {
 			return selected.size();
 		}
 	}
 
+	@Override
 	public View getItemContentView() {
 		Context context = getOwnerForm().getParentActivity();
 
@@ -404,6 +433,7 @@ public class ChoiceGroup extends Item implements Choice {
 		}
 	}
 
+	@Override
 	public void clearItemContentView() {
 		buttongroup = null;
 		buttons.clear();

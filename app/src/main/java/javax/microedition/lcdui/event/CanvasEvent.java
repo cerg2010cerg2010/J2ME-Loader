@@ -22,7 +22,7 @@ import javax.microedition.util.ArrayStack;
 
 public class CanvasEvent extends Event {
 
-	private static ArrayStack<CanvasEvent> recycled = new ArrayStack();
+	private static ArrayStack<CanvasEvent> recycled = new ArrayStack<>();
 
 	public static final int KEY_PRESSED = 0,
 			KEY_REPEATED = 1,
@@ -105,6 +105,7 @@ public class CanvasEvent extends Event {
 		return instance;
 	}
 
+	@Override
 	public void process() {
 		switch (eventType) {
 			case KEY_PRESSED:
@@ -154,19 +155,23 @@ public class CanvasEvent extends Event {
 		}
 	}
 
+	@Override
 	public void recycle() {
 		canvas = null;
 		recycled.push(this);
 	}
 
+	@Override
 	public void enterQueue() {
 		enqueued[eventType]++;
 	}
 
+	@Override
 	public void leaveQueue() {
 		enqueued[eventType]--;
 	}
 
+	@Override
 	public boolean placeableAfter(Event event) {
 		if (event instanceof CanvasEvent) {
 			switch (eventType) {

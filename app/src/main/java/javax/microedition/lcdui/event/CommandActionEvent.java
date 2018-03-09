@@ -25,7 +25,7 @@ import javax.microedition.lcdui.ItemCommandListener;
 import javax.microedition.util.ArrayStack;
 
 public class CommandActionEvent extends Event {
-	private static ArrayStack<CommandActionEvent> recycled = new ArrayStack();
+	private static ArrayStack<CommandActionEvent> recycled = new ArrayStack<>();
 
 	private CommandListener listener;
 	private ItemCommandListener itemlistener;
@@ -33,9 +33,6 @@ public class CommandActionEvent extends Event {
 	private Command command;
 	private Displayable displayable;
 	private Item item;
-
-	private CommandActionEvent() {
-	}
 
 	public static Event getInstance(CommandListener listener, Command command, Displayable displayable) {
 		CommandActionEvent instance = recycled.pop();
@@ -65,6 +62,7 @@ public class CommandActionEvent extends Event {
 		return instance;
 	}
 
+	@Override
 	public void process() {
 		if (listener != null) {
 			listener.commandAction(command, displayable);
@@ -73,6 +71,7 @@ public class CommandActionEvent extends Event {
 		}
 	}
 
+	@Override
 	public void recycle() {
 		listener = null;
 		itemlistener = null;
@@ -84,29 +83,16 @@ public class CommandActionEvent extends Event {
 		recycled.push(this);
 	}
 
+	@Override
 	public void enterQueue() {
 	}
 
+	@Override
 	public void leaveQueue() {
 	}
 
+	@Override
 	public boolean placeableAfter(Event event) {
 		return true;
 	}
-
-//	public String toString()
-//	{
-//		if(listener != null)
-//		{
-//			return "сommandAction(" + command + ", " + displayable + ")";
-//		}
-//		else if(itemlistener != null)
-//		{
-//			return "сommandAction(" + command + ", " + item + ")";
-//		}
-//		else
-//		{
-//			return "сommandAction(" + command + ")";
-//		}
-//	}
 }

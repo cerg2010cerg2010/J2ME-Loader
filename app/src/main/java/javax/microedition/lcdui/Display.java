@@ -1,6 +1,6 @@
 /*
  * Copyright 2012 Kulikov Dmitriy
- * Copyright 2017 Nikita Shakarun
+ * Copyright 2017-2018 Nikita Shakarun
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,11 +18,12 @@
 package javax.microedition.lcdui;
 
 import android.content.Context;
-import android.os.PowerManager;
 import android.os.Vibrator;
+import android.support.v7.app.AppCompatActivity;
 
 import javax.microedition.lcdui.event.RunnableEvent;
 import javax.microedition.midlet.MIDlet;
+import javax.microedition.midlet.MIDletStateChangeException;
 import javax.microedition.shell.MicroActivity;
 import javax.microedition.util.ContextHolder;
 
@@ -52,14 +53,12 @@ public class Display {
 
 	private MIDlet context;
 	private Displayable current;
-	private MicroActivity activity;
+	private AppCompatActivity activity;
 
-	private static PowerManager powermanager;
-	private static PowerManager.WakeLock wakelock;
 	private static Vibrator vibrator;
 
 	public static Display getDisplay(MIDlet midlet) {
-		if (instance == null) {
+		if (instance == null && midlet != null) {
 			instance = new Display(midlet);
 		}
 		return instance;
@@ -67,6 +66,7 @@ public class Display {
 
 	private Display(MIDlet midlet) {
 		context = midlet;
+		activity = ContextHolder.getCurrentActivity();
 	}
 
 	public static void initDisplay() {
@@ -75,25 +75,10 @@ public class Display {
 
 	public void setCurrent(Displayable disp) {
 		if (disp == null) {
-			ContextHolder.notifyPaused();
 			return;
 		}
-		if (disp instanceof Alert && ((Alert) disp).finiteTimeout()) {
-			final Displayable prev = current;
-			final Alert alert = (Alert) disp;
-			changeCurrent(disp);
-			showCurrent();
-			new Thread(new Runnable() {
-				@Override
-				public void run() {
-					try {
-						Thread.sleep(alert.getTimeout());
-						changeCurrent(prev);
-						showCurrent();
-					} catch (Exception e) {
-					}
-				}
-			}).start();
+		if (disp instanceof Alert) {
+			setCurrent((Alert) disp, current);
 		} else {
 			changeCurrent(disp);
 			showCurrent();
@@ -102,12 +87,7 @@ public class Display {
 
 	public void setCurrent(final Alert alert, Displayable disp) {
 		changeCurrent(disp);
-		activity.runOnUiThread(new Runnable() {
-			@Override
-			public void run() {
-				alert.prepareDialog().show();
-			}
-		});
+		activity.runOnUiThread(() -> alert.prepareDialog().show());
 		if (alert.finiteTimeout()) {
 			(new Thread(alert)).start();
 		}
@@ -123,31 +103,29 @@ public class Display {
 		current = disp;
 	}
 
-	public void changeActivity(MicroActivity subject) {
-		if (subject == activity) {
+	private void showCurrent() {
+		((MicroActivity) activity).setCurrent(current);
+	}
+
+	public void activityResumed() {
+		try {
 			context.startApp();
+		} catch (MIDletStateChangeException e) {
+			e.printStackTrace();
 		}
-		activity = subject;
 		showCurrent();
 	}
 
-	private void showCurrent() {
-		boolean isCanvas = current instanceof Canvas;
-		if (activity != null) {
-			if (activity.isCanvas() == isCanvas) {
-				activity.setCurrent(current);
-			} else {
-				activity.startActivity(MicroActivity.class, isCanvas);
-			}
-		} else {
-			context.startActivity(MicroActivity.class, isCanvas);
+	public void activityStopped() {
+		try {
+			context.pauseApp();
+		} catch (NullPointerException e) {
+			e.printStackTrace();
 		}
 	}
 
-	public void activityStopped(MicroActivity subject) {
-		if (subject == this.activity) {
-			context.callPauseApp();
-		}
+	public void activityDestroyed() {
+		context.callDestroyApp(true);
 	}
 
 	public Displayable getCurrent() {
@@ -156,42 +134,31 @@ public class Display {
 
 	public void callSerially(Runnable r) {
 		if (current != null) {
-			current.getEventQueue().postEvent(RunnableEvent.getInstance(r));
+			current.postEvent(RunnableEvent.getInstance(r));
 		} else {
 			r.run();
 		}
 	}
 
 	public boolean flashBacklight(int duration) {
-		try {
-			if (powermanager == null) {
-				powermanager = (PowerManager) ContextHolder.getContext().getSystemService(Context.POWER_SERVICE);
-				wakelock = powermanager.newWakeLock(PowerManager.SCREEN_BRIGHT_WAKE_LOCK | PowerManager.ACQUIRE_CAUSES_WAKEUP, "Display.flashBacklight");
-			}
-			if (wakelock.isHeld()) {
-				wakelock.release();
-			}
-			if (duration > 0) {
-				wakelock.acquire(duration);
-			} else if (duration < 0) {
-				wakelock.acquire();
-			}
-			return true;
-		} catch (Throwable t) {
-			return false;
-		}
+		return false;
 	}
 
 	public boolean vibrate(int duration) {
-		try {
-			if (vibrator == null) {
-				vibrator = (Vibrator) ContextHolder.getContext().getSystemService(Context.VIBRATOR_SERVICE);
-			}
-			vibrator.vibrate(duration);
-			return true;
-		} catch (Throwable t) {
+		if (vibrator == null) {
+			vibrator = (Vibrator) ContextHolder.getContext().getSystemService(Context.VIBRATOR_SERVICE);
+		}
+		if (!vibrator.hasVibrator()) {
 			return false;
 		}
+		if (duration > 0) {
+			vibrator.vibrate(duration);
+		} else if (duration < 0) {
+			throw new IllegalStateException();
+		} else {
+			vibrator.cancel();
+		}
+		return true;
 	}
 
 	public void setCurrentItem(Item item) {
@@ -201,7 +168,7 @@ public class Display {
 	}
 
 	public int numAlphaLevels() {
-		return 255;
+		return 256;
 	}
 
 	public int numColors() {

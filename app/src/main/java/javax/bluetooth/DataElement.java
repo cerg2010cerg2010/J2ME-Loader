@@ -62,10 +62,10 @@ public class DataElement {
 
 
 
-    /*
+	/*
 	 * The following section defines public, static and instance
-     * member variables used in the implementation of the methods.
-     */
+	 * member variables used in the implementation of the methods.
+	 */
 
 
 	/**
@@ -311,7 +311,7 @@ public class DataElement {
 					throw new IllegalArgumentException(value + " not U_INT_2");
 				break;
 			case U_INT_4:
-				if (value < 0 || value > 0xffffffffl)
+				if (value < 0 || value > 0xffffffffL)
 					throw new IllegalArgumentException(value + " not U_INT_4");
 				break;
 			case INT_1:

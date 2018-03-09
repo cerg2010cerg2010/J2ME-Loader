@@ -1,6 +1,6 @@
 /*
  * Copyright 2012 Kulikov Dmitriy
- * Copyright 2017 Nikita Shakarun
+ * Copyright 2017-2018 Nikita Shakarun
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,6 +25,8 @@ import android.view.View;
 import android.widget.EditText;
 import android.support.v7.widget.AppCompatEditText;
 
+import javax.microedition.lcdui.event.SimpleEvent;
+
 public class TextField extends Item {
 	public static final int ANY = 0;
 	public static final int EMAILADDR = 1;
@@ -46,11 +48,19 @@ public class TextField extends Item {
 	private int maxSize;
 	private int constraints;
 
-	private class InternalEditText extends AppCompatEditText {
+	private SimpleEvent msgSetText = new SimpleEvent() {
+		@Override
+		public void process() {
+			textview.setText(text);
+		}
+	};
+
+	private class InternalEditText extends android.support.v7.widget.AppCompatEditText {
 		public InternalEditText(Context context) {
 			super(context);
 		}
 
+		@Override
 		public void onFocusChanged(boolean gainFocus, int direction, Rect previouslyFocusedRect) {
 			super.onFocusChanged(gainFocus, direction, previouslyFocusedRect);
 
@@ -59,6 +69,7 @@ public class TextField extends Item {
 			}
 		}
 
+		@Override
 		public void onWindowFocusChanged(boolean hasWindowFocus) {
 			super.onWindowFocusChanged(hasWindowFocus);
 
@@ -83,7 +94,7 @@ public class TextField extends Item {
 		this.text = text;
 
 		if (textview != null) {
-			textview.setText(text);
+			ViewHandler.postEvent(msgSetText);
 		}
 	}
 
@@ -99,7 +110,7 @@ public class TextField extends Item {
 		return getString().length();
 	}
 
-	public void setMaxSize(int maxSize) {
+	public int setMaxSize(int maxSize) {
 		if (maxSize <= 0) {
 			throw new IllegalArgumentException("max size must be > 0");
 		}
@@ -109,6 +120,8 @@ public class TextField extends Item {
 		if (textview != null) {
 			textview.setFilters(new InputFilter[]{new InputFilter.LengthFilter(maxSize)});
 		}
+
+		return maxSize;
 	}
 
 	public int getMaxSize() {
@@ -119,12 +132,12 @@ public class TextField extends Item {
 		this.constraints = constraints;
 
 		if (textview != null) {
-			int inputtype = 0;
+			int inputtype;
 
 			switch (constraints & CONSTRAINT_MASK) {
 				default:
 				case ANY:
-					inputtype = InputType.TYPE_CLASS_TEXT | InputType.TYPE_TEXT_VARIATION_NORMAL;
+					inputtype = InputType.TYPE_CLASS_TEXT;
 					break;
 
 				case EMAILADDR:
@@ -177,14 +190,15 @@ public class TextField extends Item {
 		return constraints;
 	}
 
+	public void setInitialInputMode(String characterSubset) {
+	}
+
+	@Override
 	public View getItemContentView() {
 		if (textview == null) {
 			Context context = getOwnerForm().getParentActivity();
 
 			textview = new InternalEditText(context);
-
-			// textview.setBackgroundDrawable(Item.createBackground(context));
-			// textview.setTextColor(context.getResources().getColor(android.R.color.white));
 
 			setMaxSize(maxSize);
 			setConstraints(constraints);
@@ -194,6 +208,7 @@ public class TextField extends Item {
 		return textview;
 	}
 
+	@Override
 	public void clearItemContentView() {
 		textview = null;
 	}

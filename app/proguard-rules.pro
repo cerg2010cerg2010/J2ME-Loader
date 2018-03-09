@@ -15,3 +15,16 @@
 #-keepclassmembers class fqcn.of.javascript.interface.for.webview {
 #   public *;
 #}
+-keep class javax.** { *; }
+-keep class com.siemens.mp.game.** { *; }
+-keep class com.samsung.util.** { *; }
+-keep class com.nokia.mid.** { *; }
+-keep class org.microemu.** { *; }
+-keep class ru.playsoftware.** { *; }
+-keepclasseswithmembernames class * {
+    native <methods>;
+}
+
+-dontnote android.net.http.*
+-dontnote org.apache.commons.codec.**
+-dontnote org.apache.http.**

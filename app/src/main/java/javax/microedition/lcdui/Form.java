@@ -1,7 +1,7 @@
 /*
  * Copyright 2012 Kulikov Dmitriy
  * Copyright 2015-2016 Nickolay Savchenko
- * Copyright 2017 Nikita Shakarun
+ * Copyright 2017-2018 Nikita Shakarun
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,21 +19,19 @@
 package javax.microedition.lcdui;
 
 import android.content.Context;
+import android.support.v7.app.AppCompatActivity;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 
 import java.util.ArrayList;
-import java.util.Arrays;
-
-import javax.microedition.shell.MicroActivity;
 
 public class Form extends Screen {
 	private ScrollView scrollview;
 	private LinearLayout layout;
 
-	private ArrayList<Item> items = new ArrayList();
+	private ArrayList<Item> items = new ArrayList<>();
 	private ItemStateListener listener;
 
 	public Form(String title) {
@@ -42,7 +40,9 @@ public class Form extends Screen {
 
 	public Form(String title, Item[] elements) {
 		setTitle(title);
-		items.addAll(Arrays.asList(elements));
+		for (Item item : elements) {
+			append(item);
+		}
 	}
 
 	public Item get(int index) {
@@ -65,16 +65,15 @@ public class Form extends Screen {
 
 	public int append(final Item item) {
 		items.add(item);
-		item.setOwnerForm(this);
 
+		if (item.hasOwnerForm()) {
+			throw new IllegalStateException();
+		}
+		item.setOwnerForm(this);
 		if (layout != null) {
-			MicroActivity a = getParentActivity();
+			AppCompatActivity a = getParentActivity();
 			if (a != null) {
-				a.runOnUiThread(new Runnable() {
-					public void run() {
-						layout.addView(item.getItemView());
-					}
-				});
+				a.runOnUiThread(() -> layout.addView(item.getItemView()));
 			}
 		}
 		return items.size() - 1;
@@ -82,32 +81,32 @@ public class Form extends Screen {
 
 	public void insert(final int index, final Item item) {
 		items.add(index, item);
-		item.setOwnerForm(this);
 
+		if (item.hasOwnerForm()) {
+			throw new IllegalStateException();
+		}
+		item.setOwnerForm(this);
 		if (layout != null) {
-			MicroActivity a = getParentActivity();
+			AppCompatActivity a = getParentActivity();
 			if (a != null) {
-				a.runOnUiThread(new Runnable() {
-					public void run() {
-						layout.addView(item.getItemView(), index);
-					}
-				});
+				a.runOnUiThread(() -> layout.addView(item.getItemView(), index));
 			}
 		}
 	}
 
 	public void set(final int index, final Item item) {
 		items.set(index, item).setOwnerForm(null);
-		item.setOwnerForm(this);
 
+		if (item.hasOwnerForm()) {
+			throw new IllegalStateException();
+		}
+		item.setOwnerForm(this);
 		if (layout != null) {
-			MicroActivity a = getParentActivity();
+			AppCompatActivity a = getParentActivity();
 			if (a != null) {
-				a.runOnUiThread(new Runnable() {
-					public void run() {
-						layout.removeViewAt(index);
-						layout.addView(item.getItemView(), index);
-					}
+				a.runOnUiThread(() -> {
+					layout.removeViewAt(index);
+					layout.addView(item.getItemView(), index);
 				});
 			}
 		}
@@ -117,13 +116,9 @@ public class Form extends Screen {
 		items.remove(index).setOwnerForm(null);
 
 		if (layout != null) {
-			MicroActivity a = getParentActivity();
+			AppCompatActivity a = getParentActivity();
 			if (a != null) {
-				a.runOnUiThread(new Runnable() {
-					public void run() {
-						layout.removeViewAt(index);
-					}
-				});
+				a.runOnUiThread(() -> layout.removeViewAt(index));
 			}
 		}
 	}
@@ -136,13 +131,9 @@ public class Form extends Screen {
 		items.clear();
 
 		if (layout != null) {
-			MicroActivity a = getParentActivity();
+			AppCompatActivity a = getParentActivity();
 			if (a != null) {
-				a.runOnUiThread(new Runnable() {
-					public void run() {
-						layout.removeAllViews();
-					}
-				});
+				a.runOnUiThread(() -> layout.removeAllViews());
 			}
 		}
 	}
@@ -157,6 +148,7 @@ public class Form extends Screen {
 		}
 	}
 
+	@Override
 	public View getScreenView() {
 		if (scrollview == null) {
 			Context context = getParentActivity();
@@ -175,6 +167,7 @@ public class Form extends Screen {
 		return scrollview;
 	}
 
+	@Override
 	public void clearScreenView() {
 		scrollview = null;
 		layout = null;

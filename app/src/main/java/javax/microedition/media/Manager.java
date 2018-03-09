@@ -1,6 +1,6 @@
 /*
  * Copyright 2012 Kulikov Dmitriy
- * Copyright 2017 Nikita Shakarun
+ * Copyright 2017-2018 Nikita Shakarun
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,6 +17,7 @@
 
 package javax.microedition.media;
 
+import android.util.Log;
 import android.webkit.MimeTypeMap;
 
 import java.io.File;
@@ -28,7 +29,13 @@ import javax.microedition.media.protocol.DataSource;
 import javax.microedition.util.ContextHolder;
 
 public class Manager {
+	public static final String TONE_DEVICE_LOCATOR = "device://tone";
+	public static final String MIDI_DEVICE_LOCATOR = "device://midi";
+
+	private static final String TAG = Manager.class.getName();
+
 	private static class StreamCacheCleaner implements PlayerListener {
+		@Override
 		public void playerUpdate(Player player, String event, Object eventData) {
 			if (PlayerListener.CLOSED.equals(event) && eventData instanceof String) {
 				event = (String) eventData;
@@ -41,7 +48,7 @@ public class Manager {
 				File file = new File(ContextHolder.getCacheDir(), event);
 
 				if (file.delete()) {
-					System.out.println("Temp file deleted: " + event);
+					Log.d(TAG, "Temp file deleted: " + event);
 				}
 			}
 		}
@@ -70,41 +77,39 @@ public class Manager {
 		final RandomAccessFile raf = new RandomAccessFile(file, "rw");
 
 		final String name = file.getName();
-		System.out.println("Starting media pipe: " + name);
+		Log.d(TAG, "Starting media pipe: " + name);
 
 		int length = stream.available();
 
 		if (length >= 0) {
 			raf.setLength(length);
-			System.out.println("Changing file size to " + length + " bytes: " + name);
+			Log.d(TAG, "Changing file size to " + length + " bytes: " + name);
 		}
 
 		final Object sync = new Object();
 
-		Runnable runnable = new Runnable() {
-			public void run() {
-				byte[] buf = new byte[0x10000];
-				int read;
+		Runnable runnable = () -> {
+			byte[] buf = new byte[0x10000];
+			int read;
 
-				try {
-					while (true) {
-						read = stream.read(buf);
+			try {
+				while (true) {
+					read = stream.read(buf);
 
-						if (read > 0) {
-							synchronized (sync) {
-								raf.write(buf, 0, read);
-							}
-						} else if (read < 0) {
-							break;
+					if (read > 0) {
+						synchronized (sync) {
+							raf.write(buf, 0, read);
 						}
+					} else if (read < 0) {
+						break;
 					}
-
-					raf.close();
-
-					System.out.println("Media pipe closed: " + name);
-				} catch (IOException e) {
-					System.out.println("Media pipe failure: " + e.toString());
 				}
+
+				raf.close();
+
+				Log.d(TAG, "Media pipe closed: " + name);
+			} catch (IOException e) {
+				Log.d(TAG, "Media pipe failure: " + e.toString());
 			}
 		};
 
@@ -123,10 +128,11 @@ public class Manager {
 				source.close();
 
 				if (thread.isAlive()) {
-					System.out.println("Waiting for pipe to close: " + name);
+					Log.d(TAG, "Waiting for pipe to close: " + name);
 					try {
 						thread.join();
 					} catch (InterruptedException ie) {
+						ie.printStackTrace();
 					}
 
 					player.setDataSource(source);
@@ -142,7 +148,7 @@ public class Manager {
 					raf.close();
 				}
 			} catch (IOException x) {
-				System.out.println("File is not closing: " + name);
+				Log.d(TAG, "File is not closing: " + name);
 			}
 
 			cleaner.playerUpdate(null, PlayerListener.CLOSED, name);

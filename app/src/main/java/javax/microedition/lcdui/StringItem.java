@@ -1,5 +1,6 @@
 /*
  * Copyright 2012 Kulikov Dmitriy
+ * Copyright 2017 Nikita Shakarun
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,8 +26,10 @@ import javax.microedition.lcdui.event.SimpleEvent;
 public class StringItem extends Item {
 	private String text;
 	private TextView textview;
+	private Font font;
 
 	private SimpleEvent msgSetText = new SimpleEvent() {
+		@Override
 		public void process() {
 			textview.setText(text);
 		}
@@ -53,6 +56,7 @@ public class StringItem extends Item {
 		return text;
 	}
 
+	@Override
 	public View getItemContentView() {
 		if (textview == null) {
 			Context context = getOwnerForm().getParentActivity();
@@ -65,7 +69,17 @@ public class StringItem extends Item {
 		return textview;
 	}
 
+	@Override
 	public void clearItemContentView() {
 		textview = null;
+	}
+
+	public Font getFont() {
+		return font;
+	}
+
+	public void setFont(Font font) {
+		// TODO Implement this method
+		this.font = font;
 	}
 }

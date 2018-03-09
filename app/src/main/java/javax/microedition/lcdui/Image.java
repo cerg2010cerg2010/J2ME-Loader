@@ -1,5 +1,6 @@
 /*
  * Copyright 2012 Kulikov Dmitriy
+ * Copyright 2017-2018 Nikita Shakarun
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,12 +21,10 @@ import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.graphics.Canvas;
 
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
 import javax.microedition.lcdui.game.Sprite;
-import javax.microedition.shell.ConfigActivity;
 import javax.microedition.util.ContextHolder;
 
 public class Image {
@@ -56,19 +55,10 @@ public class Image {
 		return new Image(Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888));
 	}
 
-	public static Image createImage(int id) {
-		return new Image(BitmapFactory.decodeResource(ContextHolder.getContext().getResources(), id));
-	}
-
 	public static Image createImage(String resname) throws IOException {
-		if (resname.startsWith("/")) {
-			resname = resname.substring(1);
-		}
-
-		InputStream is = new FileInputStream(ConfigActivity.pathToMidletDir + ConfigActivity.MIDLET_RES_DIR + resname);
+		InputStream is = ContextHolder.getResourceAsStream(null, resname);
 		Bitmap bitmap = BitmapFactory.decodeStream(is);
 		is.close();
-
 		return new Image(bitmap);
 	}
 
@@ -89,43 +79,13 @@ public class Image {
 	}
 
 	public static Image createRGBImage(int[] rgb, int width, int height, boolean processAlpha) {
-		return new Image(Bitmap.createBitmap(rgb, width, height, Bitmap.Config.ARGB_8888));
-	}
-
-	/**
-	 * Функция масштабирования изображений.
-	 * <p>
-	 * Если один из конечных размеров меньше 0,
-	 * он вычисляется на основе другого с сохранением пропорций.
-	 * <p>
-	 * Если оба конечных размера меньше 0,
-	 * или они равны размеру исходной картинки,
-	 * возвращается исходная картинка.
-	 *
-	 * @param destw  конечная ширина
-	 * @param desth  конечная высота
-	 * @param filter true, если нужно использовать интерполяцию
-	 * @return масштабированная картинка
-	 */
-	public Image scale(int destw, int desth, boolean filter) {
-		int srcw = getWidth();
-		int srch = getHeight();
-
-		if (srcw == destw && srch == desth) {
-			return this;
-		}
-
-		if (destw < 0) {
-			if (desth < 0) {
-				return this;
-			} else {
-				destw = srcw * desth / srch;
+		if (!processAlpha) {
+			final int length = width * height;
+			for (int i = 0; i < length; i++) {
+				rgb[i] |= 0xFF << 24;
 			}
-		} else if (desth < 0) {
-			desth = srch * destw / srcw;
 		}
-
-		return new Image(Bitmap.createScaledBitmap(bitmap, destw, desth, filter));
+		return new Image(Bitmap.createBitmap(rgb, width, height, Bitmap.Config.ARGB_8888));
 	}
 
 	public Graphics getGraphics() {
